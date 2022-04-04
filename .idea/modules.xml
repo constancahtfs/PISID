@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/MongoToMySQL.iml" filepath="$PROJECT_DIR$/MongoToMySQL.iml" />
+      <module fileurl="file://$PROJECT_DIR$/PISID.iml" filepath="$PROJECT_DIR$/PISID.iml" />
     </modules>
   </component>
 </project>

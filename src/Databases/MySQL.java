@@ -1,3 +1,5 @@
+package Databases;
+
 import Models.Measurement;
 
 import java.sql.*;
@@ -19,7 +21,7 @@ public class MySQL {
 
     public void executeInsertMedicao(Measurement measurement) throws SQLException {
 
-        CallableStatement cStmt = conn.prepareCall("{call InsertMedicao(?, ?, ?, ?, ?)}"); // Stored Procedure
+        CallableStatement cStmt = conn.prepareCall("{call InsertMedicao.sql(?, ?, ?, ?, ?)}"); // Stored Procedure
 
         // Parameters
         cStmt.setString(1, measurement.getZoneId());

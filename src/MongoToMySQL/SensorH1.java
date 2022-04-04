@@ -1,5 +1,6 @@
+package MongoToMySQL;
 
-public class SensorL2 {
+public class SensorH1 {
 
     public static void main(String[] args){
 
