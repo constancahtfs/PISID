@@ -11,7 +11,9 @@ public class Mongo {
     private static final String HOST = "localhost";
     private static final int PORT = 27017;
 
+
     public MongoDatabase getEstufaDatabase(){
+
         MongoClient mongoClient = new MongoClient(Mongo.HOST, Mongo.PORT);
         return mongoClient.getDatabase("estufa");
     }
@@ -25,6 +27,8 @@ public class Mongo {
         MongoCollection<Document> collection = database.getCollection(sensor);
         DeleteResult deleteResult = collection.deleteMany(doc);
     }
+
+
 
 
 
