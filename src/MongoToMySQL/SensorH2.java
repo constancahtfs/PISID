@@ -1,9 +1,11 @@
 package MongoToMySQL;
 
-public class SensorH2 extends Sensor{
+import Models.Sensor;
+
+public class SensorH2 extends Sensor {
 
     public static void main(String[] args){
-        new SensorH2().migrateData();
+        MongoLocalToMySQLLocal.migrateData(new SensorH2());
     }
 
     @Override

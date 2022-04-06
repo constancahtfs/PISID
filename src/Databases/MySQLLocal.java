@@ -4,14 +4,14 @@ import Models.Measurement;
 
 import java.sql.*;
 
-public class MySQL {
+public class MySQLLocal {
 
     private Connection conn;
     private static final String DB_USER = System.getenv("DB_USER_JAVA");
     private static final String DB_PASS = System.getenv("DB_PASS_JAVA");
     private static final String DB_NAME = "estufa";
 
-    public MySQL() {
+    public MySQLLocal() {
         conn = null;
         try {
             conn = DriverManager.getConnection(
