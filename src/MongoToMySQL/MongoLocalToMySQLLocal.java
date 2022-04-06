@@ -35,6 +35,10 @@ public class MongoLocalToMySQLLocal {
 
         System.out.println("Number of documents in collection " + collectioName + ": "+ documents.count());
 
+        MongoCollection<Document> documents2 = mongodb.getSensorData(collectioName);
+
+        System.out.println("Number of documents in collection " + collectioName + ": "+ documents2.count());
+
         FindIterable<Document> fi = documents.find();
         MongoCursor<Document> cursor = fi.iterator();
         try {
