@@ -24,16 +24,13 @@ public class MongoCloudToMongoLocal {
     private static MongoLocal local = new MongoLocal();
     private static MongoDatabase dbLocal = local.getDatabase();
 
+    /*
+    Por testar, não implementado o processo de verificar se já existe na DB Local.
+    */
     public static void migrateData() {
         // Ir constantemente buscar dados ao mongo da cloud (Usar a classe MongoCloud)
         // Pensar numa forma de ir buscar dados não repetidos (guardar ultimo timestamp 'buscado'
         // num ficheiro por exemplo - eu adicionei o ficheiro a esta pasta)
-
-        /*
-
-        Por testar, não implementado o processo de verificar se já existe na DB Local.
-
-         */
 
         dbLocal.getCollection("sensorH1").insertOne((Document) getCollectionSensor("H1"));
         dbLocal.getCollection("sensorH2").insertOne((Document) getCollectionSensor("H2"));
@@ -41,9 +38,7 @@ public class MongoCloudToMongoLocal {
         dbLocal.getCollection("sensorL2").insertOne((Document) getCollectionSensor("L2"));
         dbLocal.getCollection("sensorT1").insertOne((Document) getCollectionSensor("T1"));
         dbLocal.getCollection("sensorT2").insertOne((Document) getCollectionSensor("T2"));
-
     }
-
 
     /*
     Por testar, em princípio devia ir buscar à cloud, e pôr num documento, a coleção respetiva
