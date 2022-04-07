@@ -43,6 +43,11 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarUtilizador` (IN `p_Nome` VARCH
     EXECUTE `stmt`;
 
 
+    SET @`sql` := CONCAT('SET DEFAULT ROLE ', `p_Role`, ' FOR ', `p_Email`);
+    PREPARE `stmt` FROM @`sql`;
+    EXECUTE `stmt`;
+
+
     SET
     `p_Nome` := REPLACE(`p_Nome`,'''',''),
     `p_Email` := REPLACE(`p_Email`,'''',''),
