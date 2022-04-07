@@ -27,4 +27,8 @@ public class MongoLocal {
         DeleteResult deleteResult = collection.deleteMany(doc);
     }
 
+    public MongoDatabase getDatabase() {
+        return db;
+    }
+
 }
