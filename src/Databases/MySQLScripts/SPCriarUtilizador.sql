@@ -19,8 +19,8 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarUtilizador` (IN `p_Nome` VARCH
 
 
     SET @`sql` := CONCAT('SET DEFAULT ROLE ', `p_Role`, ' FOR ', `p_Email`);
-        PREPARE `stmt` FROM @`sql`;
-        EXECUTE `stmt`;
+    PREPARE `stmt` FROM @`sql`;
+    EXECUTE `stmt`;
 
 
     SET
