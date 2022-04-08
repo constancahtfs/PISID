@@ -25,27 +25,21 @@ public class MySQLLocal {
         }
     }
 
-    public void executeInsertMedicao(Measurement measurement) {
+    public void executeInsertMedicao(Measurement measurement) throws Exception {
 
         if(conn == null)
-            return;
+            throw new Exception();
 
-        try {
+        CallableStatement cStmt = conn.prepareCall("{call InsertMedicao(?, ?, ?, ?, ?)}"); // Stored Procedure
 
-            CallableStatement cStmt = conn.prepareCall("{call InsertMedicao.sql(?, ?, ?, ?, ?)}"); // Stored Procedure
+        // Parameters
+        cStmt.setString(1, measurement.getZoneId());
+        cStmt.setString(2, measurement.getSensorId());
+        cStmt.setString(3, measurement.getSensorType());
+        cStmt.setString(4, measurement.getTimestamp());
+        cStmt.setString(5, measurement.getValue());
 
-            // Parameters
-            cStmt.setString(1, measurement.getZoneId());
-            cStmt.setString(2, measurement.getSensorId());
-            cStmt.setString(3, measurement.getSensorType());
-            cStmt.setString(4, measurement.getTimestamp());
-            cStmt.setString(5, measurement.getValue());
-
-            cStmt.execute();
-        }
-        catch (Exception ex){
-            System.out.println("Could not call stored procedure InsertMedicao");
-        }
+        cStmt.execute();
     }
 
 }

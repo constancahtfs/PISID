@@ -61,7 +61,7 @@ public class MongoLocalToMySQLLocal {
             cursor.close();
         }
 
-        MongoCollection<Document> remainingDocs = mongodb.getSensorData("sensorL1");
+        MongoCollection<Document> remainingDocs = mongodb.getSensorData(collectioName);
 
         System.out.println("Number of documents in collection after process " + collectioName + ": "+ remainingDocs.count());
     }
