@@ -4,16 +4,16 @@ DROP PROCEDURE IF EXISTS `CriarUtilizador` $$
 CREATE DEFINER=`root`@`localhost`
 PROCEDURE `CriarUtilizador` (IN `nome` VARCHAR(150), IN `email` VARCHAR(64), IN `pass` VARCHAR(64), IN `role` ENUM('Investigador', 'Técnico'))
 BEGIN
-    SET
-    `nome` := CONCAT("'", `p_Nome`, "'"),
-    `email` := CONCAT("'", `p_Email`, "'"),
-    `pass` := CONCAT("'", `p_Pass`, "'");
+    SET `email` := CONCAT("'", `email`, "'"),
+        `pass` := CONCAT("'", `pass`, "'");
 
 
     SET @`sql` := CONCAT('CREATE USER IF NOT EXISTS ', `email`, ' IDENTIFIED BY ', `pass`);
 	PREPARE `stmt` FROM @`sql`;
     EXECUTE `stmt`;
 
+
+    SET `email` := REPLACE(`email`,'''','');
 
     SET @`sql` := CONCAT('GRANT ', `role`, ' TO ', `email`);
     PREPARE `stmt` FROM @`sql`;
@@ -25,9 +25,8 @@ BEGIN
     EXECUTE `stmt`;
 
 
-    SET
-    `nome` := REPLACE(`nome`,'''',''),
-    `email` := REPLACE(`email`,'''','');
+    SET `nome` := REPLACE(`nome`,'''',''),
+        `email` := REPLACE(`email`,'''','');
 
 
     INSERT INTO utilizador(IDUtilizador, NomeUtilizador, EmailUtilizador, TipoUtilizador)
