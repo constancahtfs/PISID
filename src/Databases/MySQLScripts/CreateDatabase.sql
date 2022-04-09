@@ -301,6 +301,25 @@ COMMIT;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 
+-- --------------------------------------------------------
+
+--
+-- Roles
+--
+
+CREATE ROLE Administrador;
+GRANT SELECT ON estufa.cultura TO Administrador;
+GRANT SELECT ON estufa.parametrocultura TO Administrador;
+GRANT SELECT ON estufa.utilizador TO Administrador;
+GRANT SELECT ON estufa.medicao TO Administrador;
+GRANT SELECT ON estufa.alerta TO Administrador;
+GRANT SELECT ON estufa.sensor TO Administrador;
+GRANT SELECT ON estufa.zona TO Administrador;
+GRANT SELECT ON estufa.logs TO Administrador;
+GRANT EXECUTE ON PROCEDURE CriarUtilizador TO Administrador;
+GRANT EXECUTE ON PROCEDURE ApagarUtilizador TO Administrador;
+
+-- --------------------------------------------------------
 
 INSERT INTO `zona` (`IDZona`, `Temperatura`, `Humidade`, `Luz`) VALUES
 (1, '12.00', '20.00', '10.00'),
