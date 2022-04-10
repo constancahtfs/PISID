@@ -13,8 +13,6 @@ BEGIN
     EXECUTE `stmt`;
 
 
-    SET `email` := REPLACE(`email`,'''','');
-
     SET @`sql` := CONCAT('GRANT ', `role`, ' TO ', `email`);
     PREPARE `stmt` FROM @`sql`;
     EXECUTE `stmt`;
