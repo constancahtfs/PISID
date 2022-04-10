@@ -35,12 +35,12 @@ BEGIN
     -- --------------------------------------------------------
 
     SET @`sql` = CONCAT('SELECT u.IDUtilizador INTO @utilizador FROM utilizador u WHERE u.EmailUtilizador=', `email_investigador`);
-        PREPARE `stmt` FROM @`sql`;
-        EXECUTE `stmt`;
+    PREPARE `stmt` FROM @`sql`;
+    EXECUTE `stmt`;
 
     SET @`sql` = CONCAT('SELECT c.IDUtilizador INTO @delegated_to FROM cultura c WHERE c.NomeCultura=', `nome_cultura`);
-        PREPARE `stmt` FROM @`sql`;
-        EXECUTE `stmt`;
+    PREPARE `stmt` FROM @`sql`;
+    EXECUTE `stmt`;
 
     IF STRCMP(@utilizador,@delegated_to) = 0 THEN
         SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Cultura já está atribuída ao Investigador.";
