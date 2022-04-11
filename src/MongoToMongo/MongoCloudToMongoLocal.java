@@ -3,10 +3,7 @@ package MongoToMongo;
 
 import Databases.MongoLocal;
 import Models.Measurement;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.MongoClient;
+import com.mongodb.*;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
@@ -38,13 +35,17 @@ public class MongoCloudToMongoLocal {
         // Pensar numa forma de ir buscar dados não repetidos (guardar ultimo timestamp 'buscado'
         // num ficheiro por exemplo - eu adicionei o ficheiro a esta pasta)
 
-        dbLocal.getCollection("sensorH1").insertMany(getCollectionSensor("H1"));
-        System.out.println("kwodpjkdoewpkfewp");
+        //dbLocal.getCollection("sensorH1").insertMany(getCollectionSensor("H1"));
+        //System.out.println("kwodpjkdoewpkfewp");
         //dbLocal.getCollection("sensorH2").insertOne((Document) getCollectionSensor("H2"));
         //dbLocal.getCollection("sensorL1").insertOne((Document) getCollectionSensor("L1"));
         //dbLocal.getCollection("sensorL2").insertOne((Document) getCollectionSensor("L2"));
         //dbLocal.getCollection("sensorT1").insertOne((Document) getCollectionSensor("T1"));
         //dbLocal.getCollection("sensorT2").insertOne((Document) getCollectionSensor("T2"));
+
+        getSensorData("H1");
+
+
     }
 
     /*
@@ -65,14 +66,30 @@ public class MongoCloudToMongoLocal {
             Document doc = cursor.next();
             System.out.println(doc);
 
-            //if(doc.get("Sensor") == sensor)
-             //       collection.add(doc);
+            if(doc.get("Sensor") == sensor) {
+                collection.add(doc);
+
+            }
 
             i++;
 
 
         }
         return collection;
+    }
+
+    public static void getSensorData(String sensor) {
+        FindIterable<Document> collectionSensor;
+        collectionSensor = collectionCloud.find();
+        MongoCursor<Document> cursor = collectionSensor.iterator();
+        for(int i = 0; cursor.hasNext() && i < 2000; i++) {
+            Document doc = cursor.next();
+            String Data[] = doc.toString().split("=");
+            String ObjectID[] = Data[1].split(",");
+            if(doc.containsValue(sensor) && !dbLocal.getCollection("sensor"+sensor).equals(ObjectID[0])) {
+                dbLocal.getCollection("sensor"+sensor).insertOne(doc);
+            }
+        }
     }
 
 
