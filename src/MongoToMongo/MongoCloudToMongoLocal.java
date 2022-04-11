@@ -28,11 +28,8 @@ import java.util.Scanner;
 
 public class MongoCloudToMongoLocal {
 
-    private String timestamp = null;
-
     private static MongoCloud cloud = new MongoCloud();
     private static MongoCollection<Document> collectionCloud = cloud.getMedicoesData();
-    private MongoDatabase dbCloud = cloud.getDatabase();
 
     private static MongoLocal local = new MongoLocal();
     private static MongoDatabase dbLocal = local.getDatabase();
@@ -59,6 +56,7 @@ public class MongoCloudToMongoLocal {
     deve ter "sensorH1" na DB Local, etc.
      */
     public static void getSensorData(String sensor) {
+        System.out.println();
         FindIterable<Document> collectionSensor;
         collectionSensor = collectionCloud.find();
         MongoCursor<Document> cursor = collectionSensor.iterator();
@@ -70,7 +68,7 @@ public class MongoCloudToMongoLocal {
             String Time[] = Data[4].split(",");
             timestamp = Time[0];
             try {
-                if(doc.containsValue(sensor) && verifyTimestamp(timestamp)) {
+                if(doc.containsValue(sensor) && verifyTimestamp(timestamp, sensor)) {
                     dbLocal.getCollection("sensor"+sensor).insertOne(doc);
                     System.out.println("Foi inserido um registo.");
                 }
@@ -78,17 +76,17 @@ public class MongoCloudToMongoLocal {
                 System.out.println("Não foi inserido, chave duplicada.");
             }
         }
-        createTimestampFile(timestamp);
+        createTimestampFile(timestamp,sensor);
     }
 
     /*
-    Cria e/ou faz o update do ficheiro que mantém atualizado o último momento
-    de registo na base de dados.
+    Cria e/ou faz o update do ficheiro específico de cada sensor que mantém atualizado o último momento
+    de registo na base de dados do mesmo.
      */
-    public static void createTimestampFile(String timestamp){
+    public static void createTimestampFile(String timestamp, String sensorID){
         String userDirectory = Paths.get("").toAbsolutePath().toString();
         try{
-            File timestampTXT = new File(userDirectory + "\\src\\MongoToMongo\\last_timestamp.txt");
+            File timestampTXT = new File(userDirectory + "\\src\\MongoToMongo\\last_timestamp" + sensorID + ".txt");
             FileWriter fr = new FileWriter(timestampTXT,false);
             fr.write(timestamp);
             fr.close();
@@ -99,17 +97,17 @@ public class MongoCloudToMongoLocal {
     }
 
     /*
-    Verifica e valida, ou não, o timestamp do ficheiro criado anteriormente.
-    Usado na função getSensorData
+    Verifica e valida, ou não, o timestamp do ficheiro criado anteriormente para o respetivo sensor.
+    Usado na função getSensorData().
      */
-    public static boolean verifyTimestamp(String timestamp) {
+    public static boolean verifyTimestamp(String timestamp, String sensorID) {
 
         String lastTimestamp = "";
         String userDirectory = Paths.get("").toAbsolutePath().toString();
 
         try {
 
-            File lastTimestampTxt = new File(userDirectory + "\\src\\MongoToMongo\\last_timestamp.txt");
+            File lastTimestampTxt = new File(userDirectory + "\\src\\MongoToMongo\\last_timestamp" + sensorID + ".txt");
             Scanner scanner = new Scanner(lastTimestampTxt);
 
             while(scanner.hasNextLine()){
