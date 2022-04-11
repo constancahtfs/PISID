@@ -2,16 +2,22 @@ package MongoToMongo;
 
 
 import Databases.MongoLocal;
+import Models.Measurement;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.MongoClient;
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import org.bson.Document;
 import Databases.MongoCloud;
 import org.bson.conversions.Bson;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MongoCloudToMongoLocal {
 
@@ -32,23 +38,41 @@ public class MongoCloudToMongoLocal {
         // Pensar numa forma de ir buscar dados não repetidos (guardar ultimo timestamp 'buscado'
         // num ficheiro por exemplo - eu adicionei o ficheiro a esta pasta)
 
-        dbLocal.getCollection("sensorH1").insertOne((Document) getCollectionSensor("H1"));
-        dbLocal.getCollection("sensorH2").insertOne((Document) getCollectionSensor("H2"));
-        dbLocal.getCollection("sensorL1").insertOne((Document) getCollectionSensor("L1"));
-        dbLocal.getCollection("sensorL2").insertOne((Document) getCollectionSensor("L2"));
-        dbLocal.getCollection("sensorT1").insertOne((Document) getCollectionSensor("T1"));
-        dbLocal.getCollection("sensorT2").insertOne((Document) getCollectionSensor("T2"));
+        dbLocal.getCollection("sensorH1").insertMany(getCollectionSensor("H1"));
+        System.out.println("kwodpjkdoewpkfewp");
+        //dbLocal.getCollection("sensorH2").insertOne((Document) getCollectionSensor("H2"));
+        //dbLocal.getCollection("sensorL1").insertOne((Document) getCollectionSensor("L1"));
+        //dbLocal.getCollection("sensorL2").insertOne((Document) getCollectionSensor("L2"));
+        //dbLocal.getCollection("sensorT1").insertOne((Document) getCollectionSensor("T1"));
+        //dbLocal.getCollection("sensorT2").insertOne((Document) getCollectionSensor("T2"));
     }
 
     /*
     Por testar, em princípio devia ir buscar à cloud, e pôr num documento, a coleção respetiva
     de cada um dos sensores.
      */
-    public static MongoCollection<Document> getCollectionSensor(String sensor) {
-        MongoCollection<Document> collectionSensor;
-        Bson filter = Filters.text(sensor);
-        collectionSensor = (MongoCollection<Document>) collectionCloud.find(filter);
-        return collectionSensor;
+    public static List<Document> getCollectionSensor(String sensor) {
+        List<Document> collection = new ArrayList<Document>();
+        FindIterable<Document> collectionSensor;
+        //Bson filter = Filters.text(sensor);
+        collectionSensor = collectionCloud.find();
+        MongoCursor<Document> cursor = collectionSensor.iterator();
+        int i = 0;
+        while(cursor.hasNext() && i < 2000) {
+
+
+
+            Document doc = cursor.next();
+            System.out.println(doc);
+
+            //if(doc.get("Sensor") == sensor)
+             //       collection.add(doc);
+
+            i++;
+
+
+        }
+        return collection;
     }
 
 
