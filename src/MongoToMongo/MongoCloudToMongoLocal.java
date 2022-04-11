@@ -27,57 +27,27 @@ public class MongoCloudToMongoLocal {
     private static MongoLocal local = new MongoLocal();
     private static MongoDatabase dbLocal = local.getDatabase();
 
-    /*
-    Por testar, não implementado o processo de verificar se já existe na DB Local.
-    */
     public static void migrateData() {
         // Ir constantemente buscar dados ao mongo da cloud (Usar a classe MongoCloud)
         // Pensar numa forma de ir buscar dados não repetidos (guardar ultimo timestamp 'buscado'
         // num ficheiro por exemplo - eu adicionei o ficheiro a esta pasta)
 
-        //dbLocal.getCollection("sensorH1").insertMany(getCollectionSensor("H1"));
-        //System.out.println("kwodpjkdoewpkfewp");
-        //dbLocal.getCollection("sensorH2").insertOne((Document) getCollectionSensor("H2"));
-        //dbLocal.getCollection("sensorL1").insertOne((Document) getCollectionSensor("L1"));
-        //dbLocal.getCollection("sensorL2").insertOne((Document) getCollectionSensor("L2"));
-        //dbLocal.getCollection("sensorT1").insertOne((Document) getCollectionSensor("T1"));
-        //dbLocal.getCollection("sensorT2").insertOne((Document) getCollectionSensor("T2"));
-
         getSensorData("H1");
-
+        getSensorData("H2");
+        getSensorData("T1");
+        getSensorData("T2");
+        getSensorData("L1");
+        getSensorData("L2");
 
     }
 
     /*
-    Por testar, em princípio devia ir buscar à cloud, e pôr num documento, a coleção respetiva
-    de cada um dos sensores.
+    A funcionar, ainda por adicionar mecanismo de verificação de timestamp.
+    Não pára por duplicados (try/catch).
+    Vai buscar da DB Cloud e adiciona na DB Local.
+    Nota: Só funciona se as coleções tiverem o mesmo nome na DB Local, i.e., para o sensor H1,
+    deve ter "sensorH1" na DB Local, etc.
      */
-    public static List<Document> getCollectionSensor(String sensor) {
-        List<Document> collection = new ArrayList<Document>();
-        FindIterable<Document> collectionSensor;
-        //Bson filter = Filters.text(sensor);
-        collectionSensor = collectionCloud.find();
-        MongoCursor<Document> cursor = collectionSensor.iterator();
-        int i = 0;
-        while(cursor.hasNext() && i < 2000) {
-
-
-
-            Document doc = cursor.next();
-            System.out.println(doc);
-
-            if(doc.get("Sensor") == sensor) {
-                collection.add(doc);
-
-            }
-
-            i++;
-
-
-        }
-        return collection;
-    }
-
     public static void getSensorData(String sensor) {
         FindIterable<Document> collectionSensor;
         collectionSensor = collectionCloud.find();
@@ -86,8 +56,14 @@ public class MongoCloudToMongoLocal {
             Document doc = cursor.next();
             String Data[] = doc.toString().split("=");
             String ObjectID[] = Data[1].split(",");
-            if(doc.containsValue(sensor) && !dbLocal.getCollection("sensor"+sensor).equals(ObjectID[0])) {
-                dbLocal.getCollection("sensor"+sensor).insertOne(doc);
+            //if(doc.containsValue(sensor) && !dbLocal.getCollection("sensor"+sensor).equals(ObjectID[0])) {
+            try {
+                if(doc.containsValue(sensor)) {
+                    dbLocal.getCollection("sensor"+sensor).insertOne(doc);
+                    System.out.println("Foi inserido um registo.");
+                }
+            } catch(Exception e) {
+                System.out.println("Não foi inserido, chave duplicada.");
             }
         }
     }
