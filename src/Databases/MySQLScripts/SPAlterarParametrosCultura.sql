@@ -2,7 +2,7 @@ DELIMITER $$
 
 DROP PROCEDURE IF EXISTS `AlterarParametrosCultura` $$
 CREATE DEFINER=`root`@`localhost`
-PROCEDURE `AlterarParametrosCultura` (IN `NomeCultura` VARCHAR(50), IN `TipoSensor` ENUM('T', 'H', 'L'), IN `ValorMax` DECIMAL(5,2), IN `ValorMin` DECIMAL(5,2), IN `TolMax` DECIMAL(5,2), IN `TolMin` DECIMAL(5,2))
+PROCEDURE `AlterarParametrosCultura` (IN `NomeCultura` VARCHAR(50), IN `TipoSensor` ENUM('T', 'H', 'L'), IN ValorMax DECIMAL(5,2), IN TolMax DECIMAL(5,2), IN TolMin DECIMAL(5,2), IN ValorMin DECIMAL(5,2))
 BEGIN
     SELECT USER() INTO @caller;
     SET @caller := SUBSTRING_INDEX(@caller,'@',2),
@@ -35,7 +35,7 @@ BEGIN
         SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Valor máximo não pode ser maior que tolerância máxima.";
     END IF;
 
-    IF TolMin<ValorMin THEN
+    IF ValorMin>TolMin THEN
         SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Valor mínimo não pode ser maior que tolerância mínima.";
     END IF;
 
@@ -52,6 +52,13 @@ BEGIN
     PREPARE `stmt` FROM @`sql`;
     EXECUTE `stmt`;
 
+    SET @utilizador := CONCAT("'", @utilizador, "'");
+
+    SET @`sql` = CONCAT('SELECT c.IDCultura INTO @idcultura FROM cultura c WHERE c.IDUtilizador=', @utilizador,' AND c.NomeCultura=', `NomeCultura`);
+    PREPARE `stmt` FROM @`sql`;
+    EXECUTE `stmt`;
+
+
     IF ValorMax>@SensorMax THEN
         SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Valor máximo não pode ultrapassar limites do sensor.";
     END IF;
@@ -60,8 +67,12 @@ BEGIN
         SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Valor mínimo não pode ultrapassar limites do sensor.";
     END IF;
 
-    SELECT @utilizador;
-    SELECT @delegated_to;
+
+    SET @idcultura := CONCAT("'", @idcultura, "'");
+
+	SET @`sql` = CONCAT('UPDATE parametrocultura SET ValorMax=', ValorMax,', ValorMin=', ValorMin,', ToleranciaMax=', TolMax,', ToleranciaMin=', TolMin,' WHERE IDCultura=', @idcultura,' AND TipoSensor=', @sensor);
+    PREPARE `stmt` FROM @`sql`;
+    EXECUTE `stmt`;
 
     DEALLOCATE PREPARE `stmt`;
     FLUSH PRIVILEGES;
