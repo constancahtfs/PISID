@@ -2,13 +2,23 @@ from datetime import datetime
 import json
 import random
 import uuid
-
-elements = []
+import time
+from pymongo import MongoClient
+import pymongo
 
 zones = ["Z1", "Z2"]
 
 
-def create_data(number, file_name, zone=None):
+def get_database():
+    CONNECTION_STRING = "localhost"
+    client = MongoClient(CONNECTION_STRING)
+    return client['estufa']
+
+
+def create_data(db, number, collection_name, zone=None):
+    elements = []
+    collection = db[collection_name]
+
     for i in range(0, number):
         element = {
             "_id": str(uuid.uuid4()),
@@ -19,19 +29,25 @@ def create_data(number, file_name, zone=None):
 
         elements.append(element)
 
-        elements_json = json.dumps(elements, indent=2)
-
-        # Change the file path for your local box
-        f = open(f"C:\\Users\\const\\PycharmProjects\\CreatePISIDData\\{file_name}.json", "w")
-        f.write(elements_json)
-        f.close()
+    collection.insert_many(elements)
 
 
-create_data(300, "sensorL1", "Z1")
-create_data(300, "sensorL2", "Z2")
+def simulate_sensor():
+    print("Connecting...")
+    db = get_database()
+    print("Starting...")
 
-create_data(300, "sensorT1", "Z1")
-create_data(300, "sensorT2", "Z2")
+    while True:
+        #create_data(db, 300, "sensorL1", "Z1")
+        #create_data(db, 300, "sensorL2", "Z2")
 
-create_data(300, "sensorH1", "Z1")
-create_data(300, "sensorH2", "Z2")
+        #create_data(db, 300, "sensorT1", "Z1")
+        #create_data(db, 300, "sensorT2", "Z2")
+
+        create_data(db, 300, "sensorH1", "Z1")
+        #create_data(db, 300, "sensorH2", "Z2")
+        print("Inserted")
+        time.sleep(1)
+
+
+simulate_sensor()
