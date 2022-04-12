@@ -4,6 +4,10 @@ DROP PROCEDURE IF EXISTS `CriarCultura` $$
 CREATE DEFINER=`root`@`localhost`
 PROCEDURE `CriarCultura` (IN `nome_cultura` VARCHAR(150),  IN `IDZona` INT(11))
 BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    ROLLBACK;
+    SELECT 'An error has occurred, operation rollbacked and the stored procedure was terminated';
+
     SET @`sql` = CONCAT('SELECT COUNT(IDZona) INTO @zona FROM zona WHERE IDZona=', `IDZona`);
     PREPARE `stmt` FROM @`sql`;
     EXECUTE `stmt`;
@@ -11,6 +15,15 @@ BEGIN
     IF @zona=0 THEN
         SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Zona não existe.";
     END IF;
+
+    SET @`sql` = CONCAT('SELECT COUNT(NomeCultura) INTO @cultura FROM cultura WHERE NomeCultura=', `nome_cultura`);
+    PREPARE `stmt` FROM @`sql`;
+    EXECUTE `stmt`;
+
+    IF @cultura=1 THEN
+        SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Não pode criar culturas com o mesmo nome.";
+    END IF;
+
 
     SET @uuid = uuid();
     SET FOREIGN_KEY_CHECKS=0;
