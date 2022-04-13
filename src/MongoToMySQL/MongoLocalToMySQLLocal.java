@@ -31,38 +31,45 @@ public class MongoLocalToMySQLLocal {
             return;
         }
 
-        MongoCollection<Document> documents = mongodb.getSensorData(collectioName);
+        while(true) {
 
-        System.out.println("Number of documents in collection " + collectioName + ": "+ documents.count());
+            MongoCollection<Document> documents = mongodb.getSensorData(collectioName);
 
-        MongoCollection<Document> documents2 = mongodb.getSensorData(collectioName);
+            System.out.println("Number of documents in collection " + collectioName + ": " + documents.count());
 
-        System.out.println("Number of documents in collection " + collectioName + ": "+ documents2.count());
+            FindIterable<Document> fi = documents.find();
+            MongoCursor<Document> cursor = fi.iterator();
+            try {
+                while (cursor.hasNext()) {
 
-        FindIterable<Document> fi = documents.find();
-        MongoCursor<Document> cursor = fi.iterator();
-        try {
-            while(cursor.hasNext()) {
+                    Document doc = cursor.next();
 
-                Document doc = cursor.next();
+                    try {
+                        Measurement measurement = new Measurement(doc, sensorId, sensorType);
+                        mysql.executeInsertMedicao(measurement);
+                        mongodb.deleteSensorDocument(collectioName, doc);
+                    } catch (Exception ex) {
+                        System.out.println("Could not insert: " + doc.toJson());
+                        System.out.println(ex.getMessage());
+                    }
 
-                try {
-                    Measurement measurement = new Measurement(doc,sensorId, sensorType);
-                    mysql.executeInsertMedicao(measurement);
-                    mongodb.deleteSensorDocument(collectioName, doc);
                 }
-                catch(Exception ex){
-                    System.out.println("Could not insert: " + doc.toJson());
-                    System.out.println(ex.getMessage());
-                }
-
+            } finally {
+                cursor.close();
             }
-        } finally {
-            cursor.close();
+
+            MongoCollection<Document> remainingDocs = mongodb.getSensorData(collectioName);
+
+            System.out.println("Number of documents in collection after process " + collectioName + ": " + remainingDocs.count());
+
+            /*
+            try{
+                Thread.sleep(300);
+            }
+            catch(Exception ex){
+                System.out.println("Ohhhh booo-hooo you failed!!!! What yo gonna do, cry like a baby???");
+            }
+            */
         }
-
-        MongoCollection<Document> remainingDocs = mongodb.getSensorData(collectioName);
-
-        System.out.println("Number of documents in collection after process " + collectioName + ": "+ remainingDocs.count());
     }
 }
