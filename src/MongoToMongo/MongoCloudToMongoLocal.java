@@ -2,6 +2,7 @@ package MongoToMongo;
 
 
 import Databases.MongoLocal;
+import com.mongodb.MongoClient;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
@@ -19,8 +20,17 @@ import java.util.Scanner;
 
 public class MongoCloudToMongoLocal {
 
+    /*
+    Isto são com dados reais.
+
     private static final MongoCloud cloud = new MongoCloud();
     private static final MongoCollection<Document> collectionCloud = cloud.getMedicoesData();
+    */
+
+    //Estufa Cloud de teste
+    private static final MongoClient mongoClient = new MongoClient("localhost",27017);
+    private static final MongoDatabase dbCloud = mongoClient.getDatabase("estufa_cloud_server_test");
+    private static final MongoCollection<Document> collectionCloud = dbCloud.getCollection("medicoes");
 
     private static final MongoLocal local = new MongoLocal();
     private static final MongoDatabase dbLocal = local.getDatabase();
@@ -29,20 +39,6 @@ public class MongoCloudToMongoLocal {
 
     public MongoCloudToMongoLocal(String sensorToPullFrom){
         this.sensorToPullFrom = sensorToPullFrom;
-    }
-
-    public static void migrateData() {
-        // Ir constantemente buscar dados ao mongo da cloud (Usar a classe MongoCloud)
-        // Pensar numa forma de ir buscar dados não repetidos (guardar ultimo timestamp 'buscado'
-        // num ficheiro por exemplo - eu adicionei o ficheiro a esta pasta)
-
-        getSensorData(sensorToPullFrom);
-        //getSensorData("H2");
-        //getSensorData("T1");
-        //getSensorData("T2");
-        //getSensorData("L1");
-        //getSensorData("L2");
-
     }
 
     /*
@@ -59,11 +55,11 @@ public class MongoCloudToMongoLocal {
         collectionSensor = collectionCloud.find();
         MongoCursor<Document> cursor = collectionSensor.iterator();
         String timestamp = ""; //Para fazer update sobre o timestamp no ficheiro.
-        for(int i = 0; cursor.hasNext() && i < 30000; i++) {
+        //for(int i = 0; cursor.hasNext() && i < 30000; i++) {
+        while(cursor.hasNext()) {
             Document doc = cursor.next();
-            String Data[] = doc.toString().split("=");
-            String ObjectID[] = Data[1].split(",");
-            String Time[] = Data[4].split(",");
+            String[] Data = doc.toString().split("=");
+            String[] Time = Data[4].split(",");
             timestamp = Time[0];
             try {
                 if(doc.containsValue(sensorID) && verifyTimestamp(timestamp, sensorID)) {
@@ -76,7 +72,9 @@ public class MongoCloudToMongoLocal {
             }
         }
         createTimestampFile(timestamp,sensorID);
-        System.out.println("No sensor " + sensorID + " foram adicionados " + countAdded + " registos.");
+        if(countAdded != 0)
+            System.out.println("No sensor " + sensorID + " foram adicionados " + countAdded + " registos.");
+        countAdded = 0;
     }
 
     /*
@@ -90,7 +88,7 @@ public class MongoCloudToMongoLocal {
             FileWriter fr = new FileWriter(timestampTXT,false);
             fr.write(timestamp);
             fr.close();
-            System.out.println("Timestamp atualizado!");
+            //System.out.println("Timestamp atualizado!");
         } catch (Exception e) {
             System.out.println("Something went wrong with the timestamp file!");
         }
@@ -164,7 +162,7 @@ public class MongoCloudToMongoLocal {
     public static void main(String[] args) {
 
         //migrateData();
-        getSensorData("H1");
+        //getSensorData("H1");
     }
 
 }
