@@ -50,7 +50,7 @@ public class MongoCloudToMongoLocal {
      */
     public static void getSensorData(String sensorID) {
         int countAdded = 0;
-        System.out.println();
+        int countOfDoubleID = 0;
         FindIterable<Document> collectionSensor;
         collectionSensor = collectionCloud.find();
         MongoCursor<Document> cursor = collectionSensor.iterator();
@@ -68,7 +68,11 @@ public class MongoCloudToMongoLocal {
                     //System.out.println("Foi inserido um registo.");
                 }
             } catch(Exception e) {
-                System.out.println("Não foi inserido, chave duplicada.");
+                countOfDoubleID++;
+                if(countOfDoubleID == 3) {
+                    countOfDoubleID = 0;
+                    System.out.println("Não foi inserido, chave duplicada.");
+                }
             }
         }
         createTimestampFile(timestamp,sensorID);
@@ -134,7 +138,8 @@ public class MongoCloudToMongoLocal {
 
             if(result == 0) {
                 //System.out.println("Tempos iguais, não inserido.");
-                return false;
+                return true;
+                //MUDEI DE FALSE PARA TRUE
             }
             else if(result > 0) {
                 //System.out.println("Registo recente, inserido.");
