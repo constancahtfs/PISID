@@ -31,6 +31,7 @@ public class MongoCloudToMongoLocal {
     private static final MongoClient mongoClient = new MongoClient("localhost",27017);
     private static final MongoDatabase dbCloud = mongoClient.getDatabase("estufa_cloud_server_test");
     private static final MongoCollection<Document> collectionCloud = dbCloud.getCollection("medicoes");
+    //End
 
     private static final MongoLocal local = new MongoLocal();
     private static final MongoDatabase dbLocal = local.getDatabase();
