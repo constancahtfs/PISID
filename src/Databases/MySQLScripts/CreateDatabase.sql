@@ -21,8 +21,6 @@ SET time_zone = "+00:00";
 -- Database: `estufa`
 --
 
-DELIMITER $$
-
 -- --------------------------------------------------------
 
 --
@@ -340,7 +338,7 @@ DELIMITER $$
 
 DROP PROCEDURE IF EXISTS `AlterarParametrosCultura` $$
 CREATE DEFINER=`root`@`localhost`
-PROCEDURE `AlterarParametrosCultura` (IN `NomeCultura` VARCHAR(50), IN `TipoSensor` ENUM('T', 'H', 'L'), IN `ValorMax` DECIMAL(5,2), IN `ValorMin` DECIMAL(5,2), IN `TolMax` DECIMAL(5,2), IN `TolMin` DECIMAL(5,2))
+PROCEDURE `AlterarParametrosCultura` (IN `NomeCultura` VARCHAR(50), IN `TipoSensor` ENUM('T', 'H', 'L'), IN ValorMax DECIMAL(5,2), IN TolMax DECIMAL(5,2), IN TolMin DECIMAL(5,2), IN ValorMin DECIMAL(5,2))
 BEGIN
     SELECT USER() INTO @caller;
     SET @caller := SUBSTRING_INDEX(@caller,'@',2),
@@ -373,7 +371,7 @@ BEGIN
         SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Valor máximo não pode ser maior que tolerância máxima.";
     END IF;
 
-    IF TolMin<ValorMin THEN
+    IF ValorMin>TolMin THEN
         SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Valor mínimo não pode ser maior que tolerância mínima.";
     END IF;
 
@@ -390,6 +388,13 @@ BEGIN
     PREPARE `stmt` FROM @`sql`;
     EXECUTE `stmt`;
 
+    SET @utilizador := CONCAT("'", @utilizador, "'");
+
+    SET @`sql` = CONCAT('SELECT c.IDCultura INTO @idcultura FROM cultura c WHERE c.IDUtilizador=', @utilizador,' AND c.NomeCultura=', `NomeCultura`);
+    PREPARE `stmt` FROM @`sql`;
+    EXECUTE `stmt`;
+
+
     IF ValorMax>@SensorMax THEN
         SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Valor máximo não pode ultrapassar limites do sensor.";
     END IF;
@@ -398,8 +403,12 @@ BEGIN
         SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Valor mínimo não pode ultrapassar limites do sensor.";
     END IF;
 
-    SELECT @utilizador;
-    SELECT @delegated_to;
+
+    SET @idcultura := CONCAT("'", @idcultura, "'");
+
+	SET @`sql` = CONCAT('UPDATE parametrocultura SET ValorMax=', ValorMax,', ValorMin=', ValorMin,', ToleranciaMax=', TolMax,', ToleranciaMin=', TolMin,' WHERE IDCultura=', @idcultura,' AND TipoSensor=', @sensor);
+    PREPARE `stmt` FROM @`sql`;
+    EXECUTE `stmt`;
 
     DEALLOCATE PREPARE `stmt`;
     FLUSH PRIVILEGES;
@@ -420,15 +429,41 @@ CREATE DEFINER=`Software`@`localhost`
 PROCEDURE InserirMedicao(zona INT(11), sensor INT(11), tiposensor CHAR(1), date_time TIMESTAMP, measurement DECIMAL(5,2))
 BEGIN
 	SELECT *  FROM medicao;
-    INSERT INTO medicao(IDMedicao, IDSensor, TipoSensor, IDZona, Valor, Datetime)
-    VALUES
-    (uuid(), sensor, tiposensor, zona, measurement, date_time);
+    INSERT INTO medicao(IDMedicao, IDZona, IDSensor, TipoSensor, Valor, Datetime)
+    VALUES (uuid(), zona, sensor, tiposensor, measurement, date_time);
 END $$
 
 DELIMITER ;
 
 -- --------------------------------------------------------
--- space for more procedures
+
+--
+-- Trigger DesatribuirCultura (quando é apagado um utilizador)
+--
+
+DELIMITER $$
+
+DROP TRIGGER IF EXISTS `DesatribuirCultura` $$
+CREATE DEFINER=`root`@`localhost`
+TRIGGER `DesatribuirCultura` BEFORE DELETE ON `utilizador` FOR EACH ROW
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        RESIGNAL;
+    DECLARE EXIT HANDLER FOR SQLWARNING
+       RESIGNAL;
+    DECLARE EXIT HANDLER FOR NOT FOUND
+        RESIGNAL;
+
+    SET FOREIGN_KEY_CHECKS = 0;
+    UPDATE cultura
+    SET IDUtilizador = "NÃO_ATRIBUÍDA"
+    WHERE IDUtilizador = OLD.IDUtilizador;
+    SET FOREIGN_KEY_CHECKS = 1;
+
+END$$
+
+DELIMITER ;
+
 -- --------------------------------------------------------
 
 --
@@ -485,9 +520,9 @@ CREATE TABLE `medicao` (
   `IDMedicao` varchar(50) NOT NULL,
   `IDZona` int(11) NOT NULL,
   `IDSensor` int(11) NOT NULL,
+  `TipoSensor` char(1) NOT NULL,
   `Valor` decimal(5,2) NOT NULL,
-  `Datetime` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `TipoSensor` char(1) NOT NULL
+  `Datetime` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
@@ -562,7 +597,8 @@ ALTER TABLE `alerta`
 ALTER TABLE `cultura`
   ADD PRIMARY KEY (`IDCultura`,`IDUtilizador`),
   ADD KEY `IDUtilizador` (`IDUtilizador`),
-  ADD KEY `IDZona` (`IDZona`);
+  ADD KEY `IDZona` (`IDZona`),
+  ADD UNIQUE (`NomeCultura`);
 
 --
 -- Indexes for table `logs`
@@ -691,6 +727,32 @@ GRANT EXECUTE ON PROCEDURE AlterarParametrosCultura TO Investigador;
 -- --------------------------------------------------------
 
 --
+-- Role Técnico
+--
+
+DROP ROLE IF EXISTS Técnico;
+CREATE ROLE Técnico;
+GRANT SELECT ON estufa.sensor TO Técnico;
+GRANT SELECT ON estufa.zona TO Técnico;
+GRANT SELECT ON estufa.logs TO Técnico;
+
+-- --------------------------------------------------------
+
+--
+-- Role Software
+--
+
+DROP ROLE IF EXISTS Software;
+CREATE ROLE Software;
+GRANT SELECT, UPDATE ON estufa.sensor TO Software;
+GRANT SELECT, UPDATE ON estufa.zona TO Software;
+GRANT SELECT, INSERT ON estufa.logs TO Software;
+GRANT SELECT, INSERT, ON estufa.medicao TO Software;
+GRANT SELECT, INSERT ON estufa.alerta TO Software;
+
+-- --------------------------------------------------------
+
+--
 -- Variáveis para testes
 --
 
@@ -708,4 +770,21 @@ INSERT INTO `sensor` (`IDSensor`, `TipoSensor`, `LimiteInferior`, `LimiteSuperio
 (2, 'T', '2.00', '50.00', 2);
 
 CALL CriarAdministrador('admin','admin@estufa.pt','admin','Administrador');
+CALL CriarUtilizador('InvestigadorA', 'a@estufa.pt', 'a', 'Investigador');
+CALL CriarUtilizador('InvestigadorB', 'b@estufa.pt', 'b', 'Investigador');
+CALL CriarUtilizador('InvestigadorC', 'c@estufa.pt', 'c', 'Investigador');
+CALL CriarUtilizador('TécnicoA', 'aT@estufa.pt', 'aT', 'Investigador');
+
+CALL CriarCultura('CulturaA1', '1');
+CALL CriarCultura('CulturaB1', '1');
+CALL CriarCultura('CulturaA2', '2');
+CALL CriarCultura('CulturaB2', '2');
+CALL CriarCultura('CulturaC1', '1');
+CALL CriarCultura('CulturaC2', '2');
+
+CALL AtribuirCultura('CulturaA1', 'a@estufa.pt');
+CALL AtribuirCultura('CulturaB1', 'b@estufa.pt');
+CALL AtribuirCultura('CulturaA2', 'a@estufa.pt');
+CALL AtribuirCultura('CulturaB2', 'b@estufa.pt');
+
 -- --------------------------------------------------------
