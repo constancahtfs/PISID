@@ -10,6 +10,7 @@ BEGIN
     DECLARE utilizador VARCHAR(50);
     DECLARE TolMin INT(11);
     DECLARE TolMax INT(11);
+    DECLARE nome_cultura VARCHAR(50);
     DECLARE cur1 CURSOR FOR SELECT IDCultura, Estado, IDUtilizador FROM cultura WHERE IDZona = NEW.IDZona;
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
 
@@ -25,10 +26,11 @@ BEGIN
         IF (estado_ = 1 AND NOT STRCMP("NÃO_ATRIBUÍDA", utilizador) = 0) THEN
 
             SELECT ToleranciaMax, ToleranciaMin INTO TolMax, TolMin FROM parametrocultura WHERE IDCultura = id_cultura AND TipoSensor = NEW.TipoSensor;
+            SELECT NomeCultura INTO nome_cultura FROM cultura WHERE IDCultura = id_cultura;
 
             IF (NEW.Valor <= TolMin OR NEW.Valor >= TolMax) THEN
-                INSERT INTO alerta(IDAlerta, IDZona, IDCultura, IDSensor, TipoAlerta, Datetime, Valor, Mensagem)
-                VALUES (uuid(), NEW.IDZona, id_cultura, NEW.IDSensor, 'T', CURRENT_TIMESTAMP, NEW.Valor, "Medição excedeu tolerância da cultura.");
+                INSERT INTO alerta(IDAlerta, IDZona, NomeCultura, IDCultura, IDUtilizador, IDSensor, TipoSensor, TipoAlerta, Datetime, Valor, Mensagem)
+                VALUES (uuid(), NEW.IDZona, nome_cultura, id_cultura, utilizador, NEW.IDSensor, NEW.TipoSensor, 'T', CURRENT_TIMESTAMP, NEW.Valor, "Medição excedeu tolerância da cultura.");
             END IF;
         END IF;
     END LOOP alert_loop;
