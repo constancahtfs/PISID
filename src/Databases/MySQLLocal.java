@@ -8,7 +8,7 @@ import java.sql.*;
 public class MySQLLocal {
 
     private Connection conn;
-    private static final String DB_USER = System.getenv("DB_USER_JAVA");
+    private static final String DB_USER = "software@java.pt"; //System.getenv("DB_USER_JAVA");
     private static final String DB_PASS = System.getenv("DB_PASS_JAVA");
     private static final String DB_NAME = "estufa";
 
@@ -31,7 +31,7 @@ public class MySQLLocal {
         if(conn == null)
             throw new Exception();
 
-        CallableStatement cStmt = conn.prepareCall("{call InsertMedicao(?, ?, ?, ?, ?)}"); // Stored Procedure
+        CallableStatement cStmt = conn.prepareCall("{call InserirMedicao(?, ?, ?, ?, ?, ?)}"); // Stored Procedure
 
         // Parameters
         cStmt.setString(1, measurement.getZoneId());
@@ -39,8 +39,11 @@ public class MySQLLocal {
         cStmt.setString(3, measurement.getSensorType());
         cStmt.setString(4, measurement.getTimestamp());
         cStmt.setString(5, measurement.getValue());
+        cStmt.setString(6, measurement.getId());
+
 
         cStmt.execute();
+
     }
 
     public ResultSet getValoresZona(String zona) throws Exception {

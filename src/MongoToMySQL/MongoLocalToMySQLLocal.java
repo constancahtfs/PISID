@@ -51,6 +51,8 @@ public class MongoLocalToMySQLLocal {
                     } catch (Exception ex) {
                         System.out.println("Could not insert: " + doc.toJson());
                         System.out.println(ex.getMessage());
+
+                        mongodb.deleteSensorDocument(collectioName, doc); // WARNING: DEPOIS VER ISTO
                     }
 
                 }
@@ -62,14 +64,6 @@ public class MongoLocalToMySQLLocal {
 
             System.out.println("Number of documents in collection after process " + collectioName + ": " + remainingDocs.count());
 
-            /*
-            try{
-                Thread.sleep(300);
-            }
-            catch(Exception ex){
-                System.out.println("Ohhhh booo-hooo you failed!!!! What yo gonna do, cry like a baby???");
-            }
-            */
         }
     }
 }

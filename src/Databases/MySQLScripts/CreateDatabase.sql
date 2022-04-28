@@ -255,7 +255,7 @@ DELIMITER $$
 
 DROP PROCEDURE IF EXISTS `CriarAdministrador` $$
 CREATE DEFINER=`root`@`localhost`
-PROCEDURE `CriarAdministrador` (IN `nome` VARCHAR(150), IN `email` VARCHAR(64), IN `pass` VARCHAR(64), IN `role` ENUM('Administrador'))
+PROCEDURE `CriarAdministrador` (IN `nome` VARCHAR(150), IN `email` VARCHAR(64), IN `pass` VARCHAR(64), IN `role` ENUM('Administrador', 'Software'))
 BEGIN
     SET `email` := CONCAT("'", `email`, "'"),
         `pass` := CONCAT("'", `pass`, "'");
@@ -649,12 +649,12 @@ DELIMITER ;
 DELIMITER $$
 
 DROP PROCEDURE IF EXISTS `InserirMedicao` $$
-CREATE DEFINER=`Software`@`localhost`
-PROCEDURE InserirMedicao(zona INT(11), sensor INT(11), tiposensor CHAR(1), date_time TIMESTAMP, measurement DECIMAL(5,2))
+CREATE DEFINER=`root`@`localhost`
+PROCEDURE InserirMedicao(zona INT(11), sensor INT(11), tiposensor CHAR(1), date_time TIMESTAMP, measurement DECIMAL(5,2), id VARCHAR(50))
 BEGIN
 	SELECT *  FROM medicao;
     INSERT INTO medicao(IDMedicao, IDZona, IDSensor, TipoSensor, Valor, Datetime)
-    VALUES (uuid(), zona, sensor, tiposensor, measurement, date_time);
+    VALUES (id, zona, sensor, tiposensor, measurement, date_time);
 END $$
 
 DELIMITER ;
@@ -750,6 +750,7 @@ GRANT SELECT, UPDATE ON estufa.zona TO Software;
 GRANT SELECT, INSERT ON estufa.logs TO Software;
 GRANT SELECT, INSERT ON estufa.medicao TO Software;
 GRANT SELECT, INSERT ON estufa.alerta TO Software;
+GRANT EXECUTE ON PROCEDURE InserirMedicao TO Software;
 
 -- --------------------------------------------------------
 
@@ -776,6 +777,7 @@ INSERT INTO `sensor` (`IDSensor`, `TipoSensor`, `LimiteInferior`, `LimiteSuperio
 (2, 'T', '2.00', '50.00', 2);
 
 CALL CriarAdministrador('admin','admin@estufa.pt','admin','Administrador');
+CALL CriarAdministrador('Software','software@java.pt','software1234','Software');
 CALL CriarUtilizador('InvestigadorA', 'a@estufa.pt', 'a', 'Investigador');
 CALL CriarUtilizador('InvestigadorB', 'b@estufa.pt', 'b', 'Investigador');
 CALL CriarUtilizador('InvestigadorC', 'c@estufa.pt', 'c', 'Investigador');

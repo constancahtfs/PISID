@@ -2,7 +2,7 @@ DELIMITER $$
 
 DROP PROCEDURE IF EXISTS `CriarAdministrador` $$
 CREATE DEFINER=`root`@`localhost`
-PROCEDURE `CriarAdministrador` (IN `nome` VARCHAR(150), IN `email` VARCHAR(64), IN `pass` VARCHAR(64), IN `role` ENUM('Administrador'))
+PROCEDURE `CriarAdministrador` (IN `nome` VARCHAR(150), IN `email` VARCHAR(64), IN `pass` VARCHAR(64), IN `role` ENUM('Administrador', 'Software'))
 BEGIN
     SET `email` := CONCAT("'", `email`, "'"),
         `pass` := CONCAT("'", `pass`, "'");
