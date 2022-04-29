@@ -6,6 +6,11 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.result.DeleteResult;
 import org.bson.Document;
 
+import java.sql.Timestamp;
+import java.time.Instant;
+
+import static com.mongodb.client.model.Filters.*;
+
 public class MongoLocal {
 
     private static final String HOST = "localhost";
@@ -18,6 +23,7 @@ public class MongoLocal {
     }
 
     public MongoCollection<Document> getSensorData(String collectionName){
+
         MongoCollection<Document> collection = db.getCollection(collectionName);
         return collection;
     }

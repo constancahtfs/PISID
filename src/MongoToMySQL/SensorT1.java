@@ -4,7 +4,7 @@ import Models.Sensor;
 
 public class SensorT1 extends Sensor {
 
-    public static void main(String[] args){
+    public static void main(String[] args) throws InterruptedException {
         MongoLocalToMySQLLocal.migrateData(new SensorT1());
     }
 

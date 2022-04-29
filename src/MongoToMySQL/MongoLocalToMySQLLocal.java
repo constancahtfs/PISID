@@ -9,9 +9,18 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import org.bson.Document;
 
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+
+import static com.mongodb.client.model.Filters.gt;
+
 public class MongoLocalToMySQLLocal {
 
     public static void migrateData(Sensor sensor) {
+
+        boolean firstTimeRunning = true;
 
         String sensorId = sensor.getSensorId();
         String sensorType =  sensor.getSensorType();
@@ -35,35 +44,75 @@ public class MongoLocalToMySQLLocal {
 
             MongoCollection<Document> documents = mongodb.getSensorData(collectioName);
 
-            System.out.println("Number of documents in collection " + collectioName + ": " + documents.count());
+            //System.out.println("Number of documents in collection " + collectioName + ": " + documents.count());
 
-            FindIterable<Document> fi = documents.find();
+            List<Measurement> measurements = new ArrayList<Measurement>();
+            FindIterable<Document> fi = null;
+
+
+            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+            Calendar cal = Calendar.getInstance();
+            cal.setTimeInMillis(timestamp.getTime());
+            cal.add(Calendar.HOUR, -1);
+            timestamp = new Timestamp(cal.getTime().getTime());
+            String lastTimestamp = String.valueOf(timestamp);
+            String[] timestampArr1 = lastTimestamp.split(" ");
+            lastTimestamp = timestampArr1[0] + "T" + timestampArr1[1] + "Z";
+
+            fi = documents.find(gt("Data", lastTimestamp));
+
+
+
+
+            int processed = 0;
+            int skipped = 0;
+
             MongoCursor<Document> cursor = fi.iterator();
+
             try {
                 while (cursor.hasNext()) {
 
                     Document doc = cursor.next();
+                    processed++;
 
                     try {
+                        mongodb.deleteSensorDocument(collectioName, doc); // WARNING: DEPOIS VER ISTO
+
                         Measurement measurement = new Measurement(doc, sensorId, sensorType);
-                        mysql.executeInsertMedicao(measurement);
-                        mongodb.deleteSensorDocument(collectioName, doc);
+
+                        if (firstTimeRunning)
+                            measurements.add(measurement);
+                        else
+                            mysql.executeInsertMedicao(measurement);
+
+
+
                     } catch (Exception ex) {
                         System.out.println("Could not insert: " + doc.toJson());
                         System.out.println(ex.getMessage());
-
-                        mongodb.deleteSensorDocument(collectioName, doc); // WARNING: DEPOIS VER ISTO
+                        skipped++;
                     }
+
 
                 }
             } finally {
                 cursor.close();
             }
 
-            MongoCollection<Document> remainingDocs = mongodb.getSensorData(collectioName);
+            if(processed == 0) continue;
 
-            System.out.println("Number of documents in collection after process " + collectioName + ": " + remainingDocs.count());
+            if(firstTimeRunning){
+                try {
+                    mysql.executeInsertMedicoes(measurements);
+                    firstTimeRunning = false;
+                }
+                catch(Exception ex) {
+                    System.out.println("╰（‵□′）╯ " + ex.getMessage());
+                }
+            }
 
+            if(processed != 0 && skipped != 0)
+                System.out.println("Inseriu " + processed + " registos");
         }
     }
 }
