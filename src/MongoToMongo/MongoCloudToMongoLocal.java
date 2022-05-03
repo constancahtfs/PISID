@@ -71,7 +71,7 @@ public class MongoCloudToMongoLocal {
                 countOfDoubleID++;
                 if(countOfDoubleID == 3) {
                     countOfDoubleID = 0;
-                    System.out.println("Não foi inserido, chave duplicada.");
+                    //System.out.println("Não foi inserido, chave duplicada.");
                 }
             }
         }

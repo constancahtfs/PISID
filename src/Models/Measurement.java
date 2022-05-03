@@ -21,7 +21,7 @@ public class Measurement {
          String timestamp = (String) doc.get("Data");
          double value = Double.parseDouble((String) doc.get("Medicao"));
 
-         value = Math.round(value);
+         //value = Math.round(value);
 
          if (value >= 1000.0)
              value = 999.99;
@@ -41,6 +41,10 @@ public class Measurement {
 
     public String getValue() {
         return value;
+    }
+
+    public double getValueDouble() {
+        return Double.parseDouble(value);
     }
 
     public String getSensorId() {

@@ -88,8 +88,8 @@ public class MongoLocalToMySQLLocal {
 
 
                     } catch (Exception ex) {
-                        System.out.println("Could not insert: " + doc.toJson());
-                        System.out.println(ex.getMessage());
+                        //System.out.println("Could not insert: " + doc.toJson());
+                        //System.out.println(ex.getMessage());
                         skipped++;
                     }
 
@@ -99,6 +99,9 @@ public class MongoLocalToMySQLLocal {
                 cursor.close();
             }
 
+            ProcessMeasurements aha = new ProcessMeasurements(measurements, 4.0);
+            aha.removeOutliers();
+
             if(processed == 0) continue;
 
             if(firstTimeRunning){
@@ -107,7 +110,7 @@ public class MongoLocalToMySQLLocal {
                     firstTimeRunning = false;
                 }
                 catch(Exception ex) {
-                    System.out.println("╰（‵□′）╯ " + ex.getMessage());
+                    //System.out.println("╰（‵□′）╯ " + ex.getMessage());
                 }
             }
 

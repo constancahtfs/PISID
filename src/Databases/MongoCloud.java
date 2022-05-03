@@ -39,7 +39,6 @@ public class MongoCloud {
 
         if(lastTimestamp != null){
             data = db.getCollection("medicoes2022").find(and(eq("Sensor", sensor), gt("Data", lastTimestamp)));
-            System.out.println("Last timestamp " + lastTimestamp);
         }
         else {
 

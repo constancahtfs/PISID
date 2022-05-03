@@ -4,20 +4,22 @@ import Models.Measurement;
 import Models.Sensor;
 
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public class MySQLLocal {
 
     private Connection conn;
     private static final String DB_USER = "software@java.pt"; //System.getenv("DB_USER_JAVA");
-    private static final String DB_PASS = System.getenv("DB_PASS_JAVA");
+    private static final String DB_PASS = "software1234"; //System.getenv("DB_PASS_JAVA");
     private static final String DB_NAME = "estufa";
 
     public MySQLLocal() {
         conn = null;
         try {
             conn = DriverManager.getConnection(
-                    "jdbc:mysql://localhost/" + DB_NAME +
+                    "jdbc:mysql://10.90.17.81:3306/" + DB_NAME +
+                    //"jdbc:mysql://localhost/" + DB_NAME +
                             "?noAccessToProcedureBodies=true" + // Does not need "SELECT" permission with this
                             "&user=" + DB_USER +
                             "&password=" + DB_PASS);
@@ -33,12 +35,12 @@ public class MySQLLocal {
             throw new Exception();
 
         String sql_query = "INSERT INTO medicao(IDMedicao, IDZona, IDSensor, TipoSensor, Valor, Datetime) VALUES ";
-        String[] values = new String[measurements.size()];
+        ArrayList<String> values = new ArrayList<>();
 
-        int i = 0;
         for(Measurement m : measurements){
-            values[i] = "(\'" + m.getId() + "\'," + m.getZoneId() + "," + m.getSensorId() + ",\'" + m.getSensorType() + "\'," + m.getValue() + ",\'" + m.getTimestamp() + "\')";
-            i++;
+            if(Double.parseDouble(m.getValue()) != 999.99){
+                values.add("(\'" + m.getId() + "\'," + m.getZoneId() + "," + m.getSensorId() + ",\'" + m.getSensorType() + "\'," + m.getValue() + ",\'" + m.getTimestamp() + "\')");
+            }
         }
 
         String finalValues = String.join(",", values);
@@ -47,7 +49,13 @@ public class MySQLLocal {
 
         CallableStatement cStmt = conn.prepareCall(sql_query);
 
-        cStmt.execute();
+        try{
+            cStmt.execute();
+        }
+        catch(Exception ex){
+            int a = 1;
+        }
+
         System.out.println("Inserted multiple values");
 
     }
