@@ -13,7 +13,7 @@ BEGIN
 
     SET FOREIGN_KEY_CHECKS = 0;
     UPDATE cultura
-    SET IDUtilizador = "NÃO_ATRIBUÍDA"
+    SET IDUtilizador = "NÃO_ATRIBUÍDA", Estado = 0
     WHERE IDUtilizador = OLD.IDUtilizador;
     SET FOREIGN_KEY_CHECKS = 1;
 
