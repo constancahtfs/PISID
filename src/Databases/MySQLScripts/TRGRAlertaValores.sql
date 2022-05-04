@@ -10,6 +10,7 @@ BEGIN
     DECLARE utilizador VARCHAR(50);
     DECLARE ValMin DECIMAL(5,2);
     DECLARE ValMax DECIMAL(5,2);
+    DECLARE prev INT(11);
     DECLARE nome_cultura VARCHAR(50);
     DECLARE cur1 CURSOR FOR SELECT IDCultura, Estado, IDUtilizador FROM cultura WHERE IDZona = NEW.IDZona;
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
@@ -27,13 +28,16 @@ BEGIN
 
             SELECT ValorMax, ValorMin INTO ValMax, ValMin FROM parametrocultura WHERE IDCultura = id_cultura AND TipoSensor = NEW.TipoSensor;
             SELECT NomeCultura INTO nome_cultura FROM cultura WHERE IDCultura = id_cultura;
+            SELECT COUNT(*) INTO prev FROM alerta WHERE IDCultura = id_cultura AND TipoAlerta = "V" AND Datetime >= now() - interval 2 minute;
 
-            IF (NEW.Valor <= ValMin) THEN
-                INSERT INTO alerta(IDAlerta, IDZona, NomeCultura, IDCultura, IDUtilizador, IDSensor, TipoSensor, TipoAlerta, Datetime, Valor, Mensagem)
-                VALUES (uuid(), NEW.IDZona, nome_cultura, id_cultura, utilizador, NEW.IDSensor, NEW.TipoSensor, 'V', CURRENT_TIMESTAMP, NEW.Valor, "Medição excedeu valor mínimo do sensor.");
-            ELSEIF (NEW.Valor >= ValMax) THEN
-                INSERT INTO alerta(IDAlerta, IDZona, NomeCultura, IDCultura, IDUtilizador, IDSensor, TipoSensor, TipoAlerta, Datetime, Valor, Mensagem)
-                VALUES (uuid(), NEW.IDZona, nome_cultura, id_cultura, utilizador, NEW.IDSensor, NEW.TipoSensor, 'V', CURRENT_TIMESTAMP, NEW.Valor, "Medição excedeu valor máximo do sensor.");
+            IF(prev = 0) THEN
+                IF (NEW.Valor <= ValMin) THEN
+                    INSERT INTO alerta(IDAlerta, IDZona, NomeCultura, IDCultura, IDUtilizador, IDSensor, TipoSensor, TipoAlerta, Datetime, Valor, Mensagem)
+                    VALUES (uuid(), NEW.IDZona, nome_cultura, id_cultura, utilizador, NEW.IDSensor, NEW.TipoSensor, 'V', CURRENT_TIMESTAMP, NEW.Valor, "Medição excedeu valor mínimo do sensor.");
+                ELSEIF (NEW.Valor >= ValMax) THEN
+                    INSERT INTO alerta(IDAlerta, IDZona, NomeCultura, IDCultura, IDUtilizador, IDSensor, TipoSensor, TipoAlerta, Datetime, Valor, Mensagem)
+                    VALUES (uuid(), NEW.IDZona, nome_cultura, id_cultura, utilizador, NEW.IDSensor, NEW.TipoSensor, 'V', CURRENT_TIMESTAMP, NEW.Valor, "Medição excedeu valor máximo do sensor.");
+                END IF;
             END IF;
         END IF;
     END LOOP alert_loop;

@@ -4,6 +4,13 @@ DROP PROCEDURE IF EXISTS `CriarCultura` $$
 CREATE DEFINER=`root`@`localhost`
 PROCEDURE `CriarCultura` (IN `nome_cultura` VARCHAR(150),  IN `IDZona` INT(11))
 BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        SET FOREIGN_KEY_CHECKS = 1;
+    DECLARE EXIT HANDLER FOR SQLWARNING
+        SET FOREIGN_KEY_CHECKS = 1;
+    DECLARE EXIT HANDLER FOR NOT FOUND
+        SET FOREIGN_KEY_CHECKS = 1;
+
     SET @nome_cultura := CONCAT("'", `nome_cultura`, "'");
 
     SET @`sql` = CONCAT('SELECT COUNT(IDZona) INTO @zona FROM zona WHERE IDZona=', `IDZona`);
