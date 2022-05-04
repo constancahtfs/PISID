@@ -398,6 +398,8 @@ DROP PROCEDURE IF EXISTS `CriarCultura` $$
 CREATE DEFINER=`root`@`localhost`
 PROCEDURE `CriarCultura` (IN `nome_cultura` VARCHAR(150),  IN `IDZona` INT(11))
 BEGIN
+    SET @nome_cultura := CONCAT("'", `nome_cultura`, "'");
+
     SET @`sql` = CONCAT('SELECT COUNT(IDZona) INTO @zona FROM zona WHERE IDZona=', `IDZona`);
     PREPARE `stmt` FROM @`sql`;
     EXECUTE `stmt`;
@@ -406,10 +408,19 @@ BEGIN
         SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Zona não existe.";
     END IF;
 
+    SET @`sql` = CONCAT('SELECT COUNT(NomeCultura) INTO @cultura FROM cultura WHERE NomeCultura=', @nome_cultura);
+    PREPARE `stmt` FROM @`sql`;
+    EXECUTE `stmt`;
+
+    IF @cultura=1 THEN
+        SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Não pode criar culturas com o mesmo nome.";
+    END IF;
+
+    SET @nome_cultura := REPLACE(@nome_cultura,'''','');
     SET @uuid = uuid();
     SET FOREIGN_KEY_CHECKS=0;
     INSERT INTO cultura(IDCultura, IDUtilizador, IDZona, NomeCultura, Estado)
-    VALUES (@uuid, "NÃO_ATRIBUÍDA", `IDZona`, `nome_cultura`, 0);
+    VALUES (@uuid, "NÃO_ATRIBUÍDA", `IDZona`, @nome_cultura, 0);
     SET FOREIGN_KEY_CHECKS=1;
 
 
@@ -439,9 +450,9 @@ BEGIN
 
 
     INSERT INTO parametrocultura(IDCultura, TipoSensor, ValorMax, ValorMin, ToleranciaMax, ToleranciaMin)
-    VALUES (@uuid, "T", @TMax, @TMin, 0, 0),
-           (@uuid, "H", @HMax, @HMin, 0, 0),
-           (@uuid, "L", @LMax, @LMin, 0, 0);
+    VALUES (@uuid, "T", @TMax, @TMin, @TMax, @TMin),
+           (@uuid, "H", @HMax, @HMin, @HMax, @HMin),
+           (@uuid, "L", @LMax, @LMin, @LMax, @LMin);
 
 
     DEALLOCATE PREPARE `stmt`;
@@ -526,12 +537,12 @@ BEGIN
     -- --------------------------------------------------------
 
     SET @`sql` = CONCAT('SELECT u.IDUtilizador INTO @utilizador FROM utilizador u WHERE u.EmailUtilizador=', `email_investigador`);
-        PREPARE `stmt` FROM @`sql`;
-        EXECUTE `stmt`;
+    PREPARE `stmt` FROM @`sql`;
+    EXECUTE `stmt`;
 
     SET @`sql` = CONCAT('SELECT c.IDUtilizador INTO @delegated_to FROM cultura c WHERE c.NomeCultura=', `nome_cultura`);
-        PREPARE `stmt` FROM @`sql`;
-        EXECUTE `stmt`;
+    PREPARE `stmt` FROM @`sql`;
+    EXECUTE `stmt`;
 
     IF STRCMP(@utilizador,@delegated_to) = 0 THEN
         SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Cultura já está atribuída ao Investigador.";
@@ -570,14 +581,14 @@ BEGIN
     SELECT USER() INTO @caller;
     SET @caller := SUBSTRING_INDEX(@caller,'@',2),
         @caller := CONCAT("'", @caller, "'"),
-        `NomeCultura` := CONCAT("'", `NomeCultura`, "'"),
+        @nome_cultura := CONCAT("'", `NomeCultura`, "'"),
         @sensor := CONCAT("'", `TipoSensor`, "'");
 
     SET @`sql` = CONCAT('SELECT u.IDUtilizador INTO @utilizador FROM utilizador u WHERE u.EmailUtilizador=', @caller);
     PREPARE `stmt` FROM @`sql`;
     EXECUTE `stmt`;
 
-    SET @`sql` = CONCAT('SELECT c.IDUtilizador INTO @delegated_to FROM cultura c WHERE c.NomeCultura=', `NomeCultura`);
+    SET @`sql` = CONCAT('SELECT c.IDUtilizador INTO @delegated_to FROM cultura c WHERE c.NomeCultura=', @nome_cultura);
     PREPARE `stmt` FROM @`sql`;
     EXECUTE `stmt`;
 
@@ -603,7 +614,7 @@ BEGIN
     END IF;
 
 
-    SET @`sql` = CONCAT('SELECT c.IDZona INTO @zona FROM cultura c WHERE c.NomeCultura=', `NomeCultura`);
+    SET @`sql` = CONCAT('SELECT c.IDZona INTO @zona FROM cultura c WHERE c.NomeCultura=', @nome_cultura);
     PREPARE `stmt` FROM @`sql`;
     EXECUTE `stmt`;
 
@@ -617,7 +628,7 @@ BEGIN
 
     SET @utilizador := CONCAT("'", @utilizador, "'");
 
-    SET @`sql` = CONCAT('SELECT c.IDCultura INTO @idcultura FROM cultura c WHERE c.IDUtilizador=', @utilizador,' AND c.NomeCultura=', `NomeCultura`);
+    SET @`sql` = CONCAT('SELECT c.IDCultura INTO @idcultura FROM cultura c WHERE c.IDUtilizador=', @utilizador,' AND c.NomeCultura=', @nome_cultura);
     PREPARE `stmt` FROM @`sql`;
     EXECUTE `stmt`;
 
@@ -646,6 +657,63 @@ DELIMITER ;
 -- --------------------------------------------------------
 
 --
+-- Procedure AlterarEstado
+--
+
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS `AlterarEstado` $$
+CREATE DEFINER=`root`@`localhost`
+PROCEDURE `AlterarEstado` (IN `NomeCultura` VARCHAR(50))
+BEGIN
+    SELECT USER() INTO @caller;
+    SET @caller := SUBSTRING_INDEX(@caller,'@',2),
+        @caller := CONCAT("'", @caller, "'"),
+        @nome_cultura := CONCAT("'", `NomeCultura`, "'");
+
+    SET @`sql` = CONCAT('SELECT u.IDUtilizador INTO @utilizador FROM utilizador u WHERE u.EmailUtilizador=', @caller);
+    PREPARE `stmt` FROM @`sql`;
+    EXECUTE `stmt`;
+
+    SET @`sql` = CONCAT('SELECT c.IDUtilizador INTO @delegated_to FROM cultura c WHERE c.NomeCultura=', @nome_cultura);
+    PREPARE `stmt` FROM @`sql`;
+    EXECUTE `stmt`;
+
+    IF ((NOT STRCMP(@utilizador,@delegated_to) = 0) OR (@utilizador IS NULL)) THEN
+        SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Só pode alterar o estado das suas culturas.";
+    END IF;
+
+    SET @utilizador := CONCAT("'", @utilizador, "'");
+
+    SET @`sql` = CONCAT('SELECT c.IDCultura INTO @idcultura FROM cultura c WHERE c.IDUtilizador=', @utilizador,' AND c.NomeCultura=', @nome_cultura);
+    PREPARE `stmt` FROM @`sql`;
+    EXECUTE `stmt`;
+
+    SET @idcultura := CONCAT("'", @idcultura, "'");
+
+    SET @`sql` = CONCAT('SELECT c.Estado INTO @estado FROM cultura c WHERE c.IDUtilizador=', @utilizador,' AND c.NomeCultura=', @nome_cultura);
+    PREPARE `stmt` FROM @`sql`;
+    EXECUTE `stmt`;
+
+    IF @estado = 0 THEN
+	    SET @`sql` = CONCAT('UPDATE cultura SET Estado=', 1,' WHERE IDCultura=', @idcultura);
+        PREPARE `stmt` FROM @`sql`;
+        EXECUTE `stmt`;
+    ELSE
+        SET @`sql` = CONCAT('UPDATE cultura SET Estado=', 0,' WHERE IDCultura=', @idcultura);
+        PREPARE `stmt` FROM @`sql`;
+        EXECUTE `stmt`;
+    END IF;
+
+    DEALLOCATE PREPARE `stmt`;
+    FLUSH PRIVILEGES;
+END$$
+
+DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
 -- Procedure InserirMedicao
 --
 
@@ -655,7 +723,6 @@ DROP PROCEDURE IF EXISTS `InserirMedicao` $$
 CREATE DEFINER=`root`@`localhost`
 PROCEDURE InserirMedicao(zona INT(11), sensor INT(11), tiposensor CHAR(1), date_time TIMESTAMP, measurement DECIMAL(5,2), id VARCHAR(50))
 BEGIN
-	SELECT *  FROM medicao;
     INSERT INTO medicao(IDMedicao, IDZona, IDSensor, TipoSensor, Valor, Datetime)
     VALUES (id, zona, sensor, tiposensor, measurement, date_time);
 END $$
@@ -683,7 +750,7 @@ BEGIN
 
     SET FOREIGN_KEY_CHECKS = 0;
     UPDATE cultura
-    SET IDUtilizador = "NÃO_ATRIBUÍDA"
+    SET IDUtilizador = "NÃO_ATRIBUÍDA", Estado = 0
     WHERE IDUtilizador = OLD.IDUtilizador;
     SET FOREIGN_KEY_CHECKS = 1;
 
@@ -694,7 +761,7 @@ DELIMITER ;
 -- --------------------------------------------------------
 
 --
--- Trigger AlertaTolerancias (quando é apagado um utilizador)
+-- Trigger AlertaTolerancias
 --
 
 DELIMITER $$
@@ -707,8 +774,8 @@ BEGIN
     DECLARE id_cultura VARCHAR(50);
     DECLARE estado_ INT(11);
     DECLARE utilizador VARCHAR(50);
-    DECLARE TolMin INT(11);
-    DECLARE TolMax INT(11);
+    DECLARE TolMin DECIMAL(5,2);
+    DECLARE TolMax DECIMAL(5,2);
     DECLARE nome_cultura VARCHAR(50);
     DECLARE cur1 CURSOR FOR SELECT IDCultura, Estado, IDUtilizador FROM cultura WHERE IDZona = NEW.IDZona;
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
@@ -727,9 +794,63 @@ BEGIN
             SELECT ToleranciaMax, ToleranciaMin INTO TolMax, TolMin FROM parametrocultura WHERE IDCultura = id_cultura AND TipoSensor = NEW.TipoSensor;
             SELECT NomeCultura INTO nome_cultura FROM cultura WHERE IDCultura = id_cultura;
 
-            IF (NEW.Valor <= TolMin OR NEW.Valor >= TolMax) THEN
+            IF (NEW.Valor <= TolMin) THEN
                 INSERT INTO alerta(IDAlerta, IDZona, NomeCultura, IDCultura, IDUtilizador, IDSensor, TipoSensor, TipoAlerta, Datetime, Valor, Mensagem)
-                VALUES (uuid(), NEW.IDZona, nome_cultura, id_cultura, utilizador, NEW.IDSensor, NEW.TipoSensor, 'T', CURRENT_TIMESTAMP, NEW.Valor, "Medição excedeu tolerância da cultura.");
+                VALUES (uuid(), NEW.IDZona, nome_cultura, id_cultura, utilizador, NEW.IDSensor, NEW.TipoSensor, 'T', CURRENT_TIMESTAMP, NEW.Valor, "Medição excedeu tolerância mínima.");
+            ELSEIF (NEW.Valor >= TolMax) THEN
+                INSERT INTO alerta(IDAlerta, IDZona, NomeCultura, IDCultura, IDUtilizador, IDSensor, TipoSensor, TipoAlerta, Datetime, Valor, Mensagem)
+                VALUES (uuid(), NEW.IDZona, nome_cultura, id_cultura, utilizador, NEW.IDSensor, NEW.TipoSensor, 'T', CURRENT_TIMESTAMP, NEW.Valor, "Medição excedeu tolerância máxima.");
+            END IF;
+        END IF;
+    END LOOP alert_loop;
+
+    CLOSE cur1;
+END$$
+
+DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
+-- Trigger AlertaValores
+--
+
+DELIMITER $$
+
+DROP TRIGGER IF EXISTS `AlertaValores` $$
+CREATE DEFINER=`root`@`localhost`
+TRIGGER `AlertaValores` BEFORE INSERT ON `medicao` FOR EACH ROW
+BEGIN
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE id_cultura VARCHAR(50);
+    DECLARE estado_ INT(11);
+    DECLARE utilizador VARCHAR(50);
+    DECLARE ValMin DECIMAL(5,2);
+    DECLARE ValMax DECIMAL(5,2);
+    DECLARE nome_cultura VARCHAR(50);
+    DECLARE cur1 CURSOR FOR SELECT IDCultura, Estado, IDUtilizador FROM cultura WHERE IDZona = NEW.IDZona;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+    OPEN cur1;
+
+    alert_loop: LOOP
+        FETCH cur1 INTO id_cultura, estado_, utilizador;
+
+        IF done THEN
+            LEAVE alert_loop;
+        END IF;
+
+        IF (estado_ = 1 AND NOT STRCMP("NÃO_ATRIBUÍDA", utilizador) = 0) THEN
+
+            SELECT ValorMax, ValorMin INTO ValMax, ValMin FROM parametrocultura WHERE IDCultura = id_cultura AND TipoSensor = NEW.TipoSensor;
+            SELECT NomeCultura INTO nome_cultura FROM cultura WHERE IDCultura = id_cultura;
+
+            IF (NEW.Valor <= ValMin) THEN
+                INSERT INTO alerta(IDAlerta, IDZona, NomeCultura, IDCultura, IDUtilizador, IDSensor, TipoSensor, TipoAlerta, Datetime, Valor, Mensagem)
+                VALUES (uuid(), NEW.IDZona, nome_cultura, id_cultura, utilizador, NEW.IDSensor, NEW.TipoSensor, 'V', CURRENT_TIMESTAMP, NEW.Valor, "Medição excedeu valor mínimo do sensor.");
+            ELSEIF (NEW.Valor >= ValMax) THEN
+                INSERT INTO alerta(IDAlerta, IDZona, NomeCultura, IDCultura, IDUtilizador, IDSensor, TipoSensor, TipoAlerta, Datetime, Valor, Mensagem)
+                VALUES (uuid(), NEW.IDZona, nome_cultura, id_cultura, utilizador, NEW.IDSensor, NEW.TipoSensor, 'V', CURRENT_TIMESTAMP, NEW.Valor, "Medição excedeu valor máximo do sensor.");
             END IF;
         END IF;
     END LOOP alert_loop;

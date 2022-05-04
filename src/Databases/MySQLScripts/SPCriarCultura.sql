@@ -4,10 +4,6 @@ DROP PROCEDURE IF EXISTS `CriarCultura` $$
 CREATE DEFINER=`root`@`localhost`
 PROCEDURE `CriarCultura` (IN `nome_cultura` VARCHAR(150),  IN `IDZona` INT(11))
 BEGIN
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-    ROLLBACK;
-    SELECT 'An error has occurred, operation rollbacked and the stored procedure was terminated';
-
     SET @nome_cultura := CONCAT("'", `nome_cultura`, "'");
 
     SET @`sql` = CONCAT('SELECT COUNT(IDZona) INTO @zona FROM zona WHERE IDZona=', `IDZona`);
