@@ -721,6 +721,62 @@ DELIMITER ;
 -- --------------------------------------------------------
 
 --
+-- Procedure AlterarCultura
+--
+
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS `AlterarCultura` $$
+CREATE DEFINER=`root`@`localhost`
+PROCEDURE `AlterarCultura` (IN `NomeCultura` VARCHAR(50), IN `NovoNomeCultura` VARCHAR(50))
+BEGIN
+    SELECT USER() INTO @caller;
+    SET @caller := SUBSTRING_INDEX(@caller,'@',2),
+        @caller := CONCAT("'", @caller, "'"),
+        @nome_cultura := CONCAT("'", `NomeCultura`, "'"),
+        @novo_nome := CONCAT("'", `NovoNomeCultura`, "'");
+
+    SET @`sql` = CONCAT('SELECT u.IDUtilizador INTO @utilizador FROM utilizador u WHERE u.EmailUtilizador=', @caller);
+    PREPARE `stmt` FROM @`sql`;
+    EXECUTE `stmt`;
+
+    SET @`sql` = CONCAT('SELECT c.IDUtilizador INTO @delegated_to FROM cultura c WHERE c.NomeCultura=', @nome_cultura);
+    PREPARE `stmt` FROM @`sql`;
+    EXECUTE `stmt`;
+
+    IF ((NOT STRCMP(@utilizador,@delegated_to) = 0) OR (@utilizador IS NULL)) THEN
+        SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Só pode alterar o nome das suas culturas.";
+    END IF;
+
+    SET @utilizador := CONCAT("'", @utilizador, "'");
+
+    SET @`sql` = CONCAT('SELECT c.IDCultura INTO @idcultura FROM cultura c WHERE c.IDUtilizador=', @utilizador,' AND c.NomeCultura=', @nome_cultura);
+    PREPARE `stmt` FROM @`sql`;
+    EXECUTE `stmt`;
+
+    SET @idcultura := CONCAT("'", @idcultura, "'");
+
+    SET @`sql` = CONCAT('SELECT COUNT(*) INTO @checks FROM cultura WHERE IDUtilizador=', @utilizador,' AND NomeCultura=', @novo_nome);
+    PREPARE `stmt` FROM @`sql`;
+    EXECUTE `stmt`;
+
+    IF (@checks = 1) THEN
+        SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Nome já está em uso, tente outro.";
+    END IF;
+
+	SET @`sql` = CONCAT('UPDATE cultura SET NomeCultura=', @novo_nome,' WHERE IDCultura=', @idcultura);
+    PREPARE `stmt` FROM @`sql`;
+    EXECUTE `stmt`;
+
+    DEALLOCATE PREPARE `stmt`;
+    FLUSH PRIVILEGES;
+END$$
+
+DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
 -- Procedure InserirMedicao
 --
 
@@ -783,6 +839,7 @@ BEGIN
     DECLARE utilizador VARCHAR(50);
     DECLARE TolMin DECIMAL(5,2);
     DECLARE TolMax DECIMAL(5,2);
+    DECLARE prev INT(11);
     DECLARE nome_cultura VARCHAR(50);
     DECLARE cur1 CURSOR FOR SELECT IDCultura, Estado, IDUtilizador FROM cultura WHERE IDZona = NEW.IDZona;
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
@@ -800,13 +857,16 @@ BEGIN
 
             SELECT ToleranciaMax, ToleranciaMin INTO TolMax, TolMin FROM parametrocultura WHERE IDCultura = id_cultura AND TipoSensor = NEW.TipoSensor;
             SELECT NomeCultura INTO nome_cultura FROM cultura WHERE IDCultura = id_cultura;
+            SELECT COUNT(*) INTO prev FROM alerta WHERE IDCultura = id_cultura AND TipoAlerta = "T" AND Datetime >= now() - interval 2 minute;
 
-            IF (NEW.Valor <= TolMin) THEN
-                INSERT INTO alerta(IDAlerta, IDZona, NomeCultura, IDCultura, IDUtilizador, IDSensor, TipoSensor, TipoAlerta, Datetime, Valor, Mensagem)
-                VALUES (uuid(), NEW.IDZona, nome_cultura, id_cultura, utilizador, NEW.IDSensor, NEW.TipoSensor, 'T', CURRENT_TIMESTAMP, NEW.Valor, "Medição excedeu tolerância mínima.");
-            ELSEIF (NEW.Valor >= TolMax) THEN
-                INSERT INTO alerta(IDAlerta, IDZona, NomeCultura, IDCultura, IDUtilizador, IDSensor, TipoSensor, TipoAlerta, Datetime, Valor, Mensagem)
-                VALUES (uuid(), NEW.IDZona, nome_cultura, id_cultura, utilizador, NEW.IDSensor, NEW.TipoSensor, 'T', CURRENT_TIMESTAMP, NEW.Valor, "Medição excedeu tolerância máxima.");
+            IF (prev = 0) THEN
+                IF (NEW.Valor <= TolMin) THEN
+                    INSERT INTO alerta(IDAlerta, IDZona, NomeCultura, IDCultura, IDUtilizador, IDSensor, TipoSensor, TipoAlerta, Datetime, Valor, Mensagem)
+                    VALUES (uuid(), NEW.IDZona, nome_cultura, id_cultura, utilizador, NEW.IDSensor, NEW.TipoSensor, 'T', CURRENT_TIMESTAMP, NEW.Valor, "Medição excedeu tolerância mínima.");
+                ELSEIF (NEW.Valor >= TolMax) THEN
+                    INSERT INTO alerta(IDAlerta, IDZona, NomeCultura, IDCultura, IDUtilizador, IDSensor, TipoSensor, TipoAlerta, Datetime, Valor, Mensagem)
+                    VALUES (uuid(), NEW.IDZona, nome_cultura, id_cultura, utilizador, NEW.IDSensor, NEW.TipoSensor, 'T', CURRENT_TIMESTAMP, NEW.Valor, "Medição excedeu tolerância máxima.");
+                END IF;
             END IF;
         END IF;
     END LOOP alert_loop;
@@ -834,6 +894,7 @@ BEGIN
     DECLARE utilizador VARCHAR(50);
     DECLARE ValMin DECIMAL(5,2);
     DECLARE ValMax DECIMAL(5,2);
+    DECLARE prev INT(11);
     DECLARE nome_cultura VARCHAR(50);
     DECLARE cur1 CURSOR FOR SELECT IDCultura, Estado, IDUtilizador FROM cultura WHERE IDZona = NEW.IDZona;
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
@@ -851,13 +912,16 @@ BEGIN
 
             SELECT ValorMax, ValorMin INTO ValMax, ValMin FROM parametrocultura WHERE IDCultura = id_cultura AND TipoSensor = NEW.TipoSensor;
             SELECT NomeCultura INTO nome_cultura FROM cultura WHERE IDCultura = id_cultura;
+            SELECT COUNT(*) INTO prev FROM alerta WHERE IDCultura = id_cultura AND TipoAlerta = "V" AND Datetime >= now() - interval 2 minute;
 
-            IF (NEW.Valor <= ValMin) THEN
-                INSERT INTO alerta(IDAlerta, IDZona, NomeCultura, IDCultura, IDUtilizador, IDSensor, TipoSensor, TipoAlerta, Datetime, Valor, Mensagem)
-                VALUES (uuid(), NEW.IDZona, nome_cultura, id_cultura, utilizador, NEW.IDSensor, NEW.TipoSensor, 'V', CURRENT_TIMESTAMP, NEW.Valor, "Medição excedeu valor mínimo do sensor.");
-            ELSEIF (NEW.Valor >= ValMax) THEN
-                INSERT INTO alerta(IDAlerta, IDZona, NomeCultura, IDCultura, IDUtilizador, IDSensor, TipoSensor, TipoAlerta, Datetime, Valor, Mensagem)
-                VALUES (uuid(), NEW.IDZona, nome_cultura, id_cultura, utilizador, NEW.IDSensor, NEW.TipoSensor, 'V', CURRENT_TIMESTAMP, NEW.Valor, "Medição excedeu valor máximo do sensor.");
+            IF(prev = 0) THEN
+                IF (NEW.Valor <= ValMin) THEN
+                    INSERT INTO alerta(IDAlerta, IDZona, NomeCultura, IDCultura, IDUtilizador, IDSensor, TipoSensor, TipoAlerta, Datetime, Valor, Mensagem)
+                    VALUES (uuid(), NEW.IDZona, nome_cultura, id_cultura, utilizador, NEW.IDSensor, NEW.TipoSensor, 'V', CURRENT_TIMESTAMP, NEW.Valor, "Medição excedeu valor mínimo do sensor.");
+                ELSEIF (NEW.Valor >= ValMax) THEN
+                    INSERT INTO alerta(IDAlerta, IDZona, NomeCultura, IDCultura, IDUtilizador, IDSensor, TipoSensor, TipoAlerta, Datetime, Valor, Mensagem)
+                    VALUES (uuid(), NEW.IDZona, nome_cultura, id_cultura, utilizador, NEW.IDSensor, NEW.TipoSensor, 'V', CURRENT_TIMESTAMP, NEW.Valor, "Medição excedeu valor máximo do sensor.");
+                END IF;
             END IF;
         END IF;
     END LOOP alert_loop;
