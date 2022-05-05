@@ -965,6 +965,8 @@ GRANT SELECT ON estufa.zona TO Investigador;
 GRANT SELECT ON estufa.cultura TO Investigador;
 GRANT SELECT ON estufa.parametrocultura TO Investigador;
 GRANT EXECUTE ON PROCEDURE AlterarParametrosCultura TO Investigador;
+GRANT EXECUTE ON PROCEDURE AlterarCultura TO Investigador;
+GRANT EXECUTE ON PROCEDURE AlterarEstado TO Investigador;
 
 -- --------------------------------------------------------
 
@@ -991,6 +993,7 @@ GRANT SELECT, UPDATE ON estufa.zona TO Software;
 GRANT SELECT, INSERT ON estufa.logs TO Software;
 GRANT SELECT, INSERT ON estufa.medicao TO Software;
 GRANT SELECT, INSERT ON estufa.alerta TO Software;
+GRANT SELECT ON estufa.utilizador TO Software;
 GRANT EXECUTE ON PROCEDURE InserirMedicao TO Software;
 
 -- --------------------------------------------------------
