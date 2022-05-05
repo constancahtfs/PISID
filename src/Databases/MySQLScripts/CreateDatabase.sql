@@ -613,7 +613,7 @@ BEGIN
     END IF;
 
     IF TolMax>ValorMax THEN
-        SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Valor máximo não pode ser maior que tolerância máxima.";
+        SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Tolerância máxima não pode ser maior que valor máximo.";
     END IF;
 
     IF ValorMin>TolMin THEN
