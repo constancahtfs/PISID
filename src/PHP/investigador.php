@@ -154,6 +154,7 @@ a:link, a:visited{
 						<th>Nome</th>
 						<th>Zona</th>
 						<th>Estado</th>
+						<th>Intervalo entre Alertas</th>
 						<th></th>
 					  </tr>
 					  
@@ -173,7 +174,7 @@ a:link, a:visited{
 					  
 					  $queryconn->close();
 					  
-					  $stmt = $userconn->prepare("SELECT nomecultura, idzona, estado FROM cultura WHERE idutilizador=?");
+					  $stmt = $userconn->prepare("SELECT nomecultura, idzona, estado, intervalo FROM cultura WHERE idutilizador=?");
 					  $stmt->bind_param("s", $id);
 					  $stmt->execute();
 					  $result = $stmt->get_result();
@@ -191,13 +192,16 @@ a:link, a:visited{
 						  }elseif($estado == 1){
 							  $estado = "Ativa";
 						  }
+						  
+						  $intervalo = $row["intervalo"];
 					  ?>
 					  
 					  <tr>
 						<td><?php echo htmlspecialchars($nome); ?></td>
 						<td><?php echo htmlspecialchars($zona); ?></td>
 						<td><?php echo htmlspecialchars($estado); ?></td>
-						<td><input type="hidden" name="cultura[]" value="<?php echo htmlspecialchars($nome); ?>"> <input type="hidden" name="estado[]" value="<?php echo htmlspecialchars($estado); ?>"> <button style="width: 100px; height: 40px; margin-right: -120px" type="submit" name="int" value="<?php echo htmlspecialchars($i); ?>">Editar</button></td>
+						<td><?php echo htmlspecialchars($intervalo); ?></td>
+						<td><input type="hidden" name="cultura[]" value="<?php echo htmlspecialchars($nome); ?>"> <input type="hidden" name="estado[]" value="<?php echo htmlspecialchars($estado); ?>"> <input type="hidden" name="intervalo[]" value="<?php echo htmlspecialchars($intervalo); ?>"> <button style="width: 100px; height: 40px; margin-right: -120px" type="submit" name="int" value="<?php echo htmlspecialchars($i); ?>">Editar</button></td>
 					  </tr>
 					  
 					  <?php
@@ -216,6 +220,7 @@ a:link, a:visited{
 		
 		$_SESSION["cultura"] = $_POST["cultura"][$_POST["int"]];
 		$_SESSION["estado"] = $_POST["estado"][$_POST["int"]];
+		$_SESSION["intervalo"] = $_POST["intervalo"][$_POST["int"]];
 		
 		header("Location: parametros.php");
 	}	
