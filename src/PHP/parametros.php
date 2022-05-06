@@ -1,55 +1,59 @@
 <?php
 	session_start();
-	
-	$ip = "localhost";
-	$user = "";
-	$pass = "";
-	$db = "estufa";
-	
-	$userconn = new mysqli($ip, $_SESSION["user"], $_SESSION["pass"], $db);
-				
-	$stmt = $userconn->prepare("SELECT idcultura FROM cultura WHERE nomecultura=?");
-	$stmt->bind_param("s", $_SESSION["cultura"]);
-	$stmt->execute();
-	$result = $stmt->get_result();
 
-	$row = mysqli_fetch_array($result);
-	$id = $row["idcultura"];
-	
-	$stmt = $userconn->prepare("SELECT valormin, toleranciamin, toleranciamax, valormax FROM parametrocultura WHERE tiposensor = 'H' AND idcultura=?");
-	$stmt->bind_param("s", $id);
-	$stmt->execute();
-	$result = $stmt->get_result();
-	
-	$row = mysqli_fetch_array($result);
-	$minh = $row["valormin"];
-	$tminh = $row["toleranciamin"];
-	$tmaxh = $row["toleranciamax"];
-	$maxh = $row["valormax"];
-	
-	$stmt = $userconn->prepare("SELECT valormin, toleranciamin, toleranciamax, valormax FROM parametrocultura WHERE tiposensor = 'T' AND idcultura=?");
-	$stmt->bind_param("s", $id);
-	$stmt->execute();
-	$result = $stmt->get_result();
+	if(!isset($_SESSION["authenticated"])){
+    	header("Location: login.php");
+    }else{
+        $ip = "localhost";
+        $user = "";
+        $pass = "";
+        $db = "estufa";
 
-	$row = mysqli_fetch_array($result);
-	$mint = $row["valormin"];
-	$tmint = $row["toleranciamin"];
-	$tmaxt = $row["toleranciamax"];
-	$maxt = $row["valormax"];
-	
-	$stmt = $userconn->prepare("SELECT valormin, toleranciamin, toleranciamax, valormax FROM parametrocultura WHERE tiposensor = 'L' AND idcultura=?");
-	$stmt->bind_param("s", $id);
-	$stmt->execute();
-	$result = $stmt->get_result();
-	
-	$row = mysqli_fetch_array($result);
-	$minl = $row["valormin"];
-	$tminl = $row["toleranciamin"];
-	$tmaxl = $row["toleranciamax"];
-	$maxl = $row["valormax"];
-				
-	$userconn->close();
+        $userconn = new mysqli($ip, $_SESSION["user"], $_SESSION["pass"], $db);
+
+        $stmt = $userconn->prepare("SELECT idcultura FROM cultura WHERE nomecultura=?");
+        $stmt->bind_param("s", $_SESSION["cultura"]);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $row = mysqli_fetch_array($result);
+        $id = $row["idcultura"];
+
+        $stmt = $userconn->prepare("SELECT valormin, toleranciamin, toleranciamax, valormax FROM parametrocultura WHERE tiposensor = 'H' AND idcultura=?");
+        $stmt->bind_param("s", $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $row = mysqli_fetch_array($result);
+        $minh = $row["valormin"];
+        $tminh = $row["toleranciamin"];
+        $tmaxh = $row["toleranciamax"];
+        $maxh = $row["valormax"];
+
+        $stmt = $userconn->prepare("SELECT valormin, toleranciamin, toleranciamax, valormax FROM parametrocultura WHERE tiposensor = 'T' AND idcultura=?");
+        $stmt->bind_param("s", $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $row = mysqli_fetch_array($result);
+        $mint = $row["valormin"];
+        $tmint = $row["toleranciamin"];
+        $tmaxt = $row["toleranciamax"];
+        $maxt = $row["valormax"];
+
+        $stmt = $userconn->prepare("SELECT valormin, toleranciamin, toleranciamax, valormax FROM parametrocultura WHERE tiposensor = 'L' AND idcultura=?");
+        $stmt->bind_param("s", $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $row = mysqli_fetch_array($result);
+        $minl = $row["valormin"];
+        $tminl = $row["toleranciamin"];
+        $tmaxl = $row["toleranciamax"];
+        $maxl = $row["valormax"];
+
+        $userconn->close();
+    }
 ?>
 
 <!DOCTYPE html>
