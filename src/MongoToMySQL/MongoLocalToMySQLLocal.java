@@ -99,7 +99,7 @@ public class MongoLocalToMySQLLocal {
                 cursor.close();
             }
 
-            ProcessMeasurements aha = new ProcessMeasurements(measurements, 4.0);
+            ProcessMeasurements aha = new ProcessMeasurements(measurements, 1.0);
             aha.removeOutliers();
 
             if(processed == 0) continue;
