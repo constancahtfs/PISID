@@ -52,14 +52,14 @@ public class MongoCloud {
             Timestamp timestamp = new Timestamp(System.currentTimeMillis());
             Calendar cal = Calendar.getInstance();
             cal.setTimeInMillis(timestamp.getTime());
-            cal.add(Calendar.HOUR, -1);
+            cal.add(Calendar.MINUTE, -2);
             timestamp = new Timestamp(cal.getTime().getTime());
             lastTimestamp = String.valueOf(timestamp);
             String[] timestampArr1 = lastTimestamp.split(" ");
             lastTimestamp = timestampArr1[0] + "T" + timestampArr1[1] + "Z";
 
 
-            data = db.getCollection("medicoes2022").find(and(eq("Sensor", sensor), lt("Data", lastTimestamp)));
+            data = db.getCollection("medicoes2022").find(and(eq("Sensor", sensor), gt("Data", lastTimestamp)));
             //.sort(Sorts.descending("Data"));
             System.out.println("Não tem ultimo timestamp");
 
