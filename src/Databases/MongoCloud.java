@@ -16,6 +16,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Scanner;
 
@@ -43,10 +44,19 @@ public class MongoCloud {
         else {
 
 
-            lastTimestamp = String.valueOf(new Timestamp(System.currentTimeMillis()));
+           /* lastTimestamp = String.valueOf(new Timestamp(System.currentTimeMillis()));
             String[] timestampArr1 = lastTimestamp.split(" ");
             lastTimestamp = timestampArr1[0] + "T" + timestampArr1[1] + "Z";
-            Instant aa = Instant.parse(lastTimestamp);
+            Instant aa = Instant.parse(lastTimestamp);*/
+
+            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+            Calendar cal = Calendar.getInstance();
+            cal.setTimeInMillis(timestamp.getTime());
+            cal.add(Calendar.HOUR, -1);
+            timestamp = new Timestamp(cal.getTime().getTime());
+            lastTimestamp = String.valueOf(timestamp);
+            String[] timestampArr1 = lastTimestamp.split(" ");
+            lastTimestamp = timestampArr1[0] + "T" + timestampArr1[1] + "Z";
 
 
             data = db.getCollection("medicoes2022").find(and(eq("Sensor", sensor), lt("Data", lastTimestamp)));
