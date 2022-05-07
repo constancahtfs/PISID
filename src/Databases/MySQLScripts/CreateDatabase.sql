@@ -58,21 +58,6 @@ CREATE TABLE `cultura` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `logs`
---
-
-CREATE TABLE `logs` (
-  `IDLog` varchar(50) NOT NULL,
-  `IDMedicao` varchar(50) NOT NULL,
-  `IDZona` int(11) NOT NULL,
-  `IDSensor` int(11) NOT NULL,
-  `Valor` decimal(5,2) NOT NULL,
-  `Datetime` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `medicao`
 --
 
@@ -159,12 +144,6 @@ ALTER TABLE `cultura`
   ADD KEY `IDZona` (`IDZona`),
   ADD UNIQUE (`NomeCultura`);
 
---
--- Indexes for table `logs`
---
-ALTER TABLE `logs`
-  ADD PRIMARY KEY (`IDLog`,`IDMedicao`),
-  ADD KEY `IDMedicao` (`IDMedicao`);
 
 --
 -- Indexes for table `medicao`
@@ -211,11 +190,6 @@ ALTER TABLE `cultura`
   ADD CONSTRAINT `cultura_ibfk_1` FOREIGN KEY (`IDUtilizador`) REFERENCES `utilizador` (`IDUtilizador`) ON DELETE CASCADE,
   ADD CONSTRAINT `cultura_ibfk_2` FOREIGN KEY (`IDZona`) REFERENCES `zona` (`IDZona`) ON DELETE CASCADE;
 
---
--- Constraints for table `logs`
---
-ALTER TABLE `logs`
-  ADD CONSTRAINT `logs_ibfk_1` FOREIGN KEY (`IDMedicao`) REFERENCES `medicao` (`IDMedicao`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `medicao`
@@ -1124,7 +1098,6 @@ GRANT SELECT ON estufa.medicao TO Administrador;
 GRANT SELECT ON estufa.alerta TO Administrador;
 GRANT SELECT ON estufa.sensor TO Administrador;
 GRANT SELECT ON estufa.zona TO Administrador;
-GRANT SELECT ON estufa.logs TO Administrador;
 GRANT EXECUTE ON PROCEDURE CriarUtilizador TO Administrador;
 GRANT EXECUTE ON PROCEDURE ApagarUtilizador TO Administrador;
 GRANT EXECUTE ON PROCEDURE CriarCultura TO Administrador;
@@ -1158,7 +1131,6 @@ DROP ROLE IF EXISTS Técnico;
 CREATE ROLE Técnico;
 GRANT SELECT ON estufa.sensor TO Técnico;
 GRANT SELECT ON estufa.zona TO Técnico;
-GRANT SELECT ON estufa.logs TO Técnico;
 
 -- --------------------------------------------------------
 
@@ -1170,8 +1142,7 @@ DROP ROLE IF EXISTS Software;
 CREATE ROLE Software;
 GRANT SELECT, UPDATE ON estufa.sensor TO Software;
 GRANT SELECT, UPDATE ON estufa.zona TO Software;
-GRANT SELECT, INSERT ON estufa.logs TO Software;
-GRANT SELECT, INSERT ON estufa.medicao TO Software;
+GRANT SELECT, INSERT, UPDATE ON estufa.medicao TO Software;
 GRANT SELECT, INSERT ON estufa.alerta TO Software;
 GRANT SELECT ON estufa.utilizador TO Software;
 GRANT EXECUTE ON PROCEDURE InserirMedicao TO Software;

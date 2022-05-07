@@ -1,5 +1,7 @@
 package Databases;
 
+import Errors.ERROR_SOURCE;
+import Errors.ErrorHandling;
 import Models.Measurement;
 import Models.Sensor;
 
@@ -18,65 +20,75 @@ public class MySQLLocal {
         conn = null;
         try {
             conn = DriverManager.getConnection(
-                    "jdbc:mysql://10.90.17.81:3306/" + DB_NAME +
-                    //"jdbc:mysql://localhost/" + DB_NAME +
+                    //"jdbc:mysql://192.168.191.128:3306/" + DB_NAME +
+                    "jdbc:mysql://localhost/" + DB_NAME +
                             "?noAccessToProcedureBodies=true" + // Does not need "SELECT" permission with this
                             "&user=" + DB_USER +
                             "&password=" + DB_PASS);
         }
         catch (Exception ex){
-            System.out.println("Unable to connect to database. Did you create the environment variables?");
+            System.out.println("Unable to connect to database MySQL Local.");
         }
     }
 
+    public Connection getConn(){
+        return conn;
+    }
+
+
     public void executeInsertMedicoes(List<Measurement> measurements) throws Exception {
 
-        if(conn == null)
-            throw new Exception();
-
-        String sql_query = "INSERT INTO medicao(IDMedicao, IDZona, IDSensor, TipoSensor, Valor, Datetime) VALUES ";
-        ArrayList<String> values = new ArrayList<>();
-
-        for(Measurement m : measurements){
-            if(Double.parseDouble(m.getValue()) != 999.99){
-                values.add("(\'" + m.getId() + "\'," + m.getZoneId() + "," + m.getSensorId() + ",\'" + m.getSensorType() + "\'," + m.getValue() + ",\'" + m.getTimestamp() + "\')");
-            }
-        }
-
-        String finalValues = String.join(",", values);
-
-        sql_query = sql_query + finalValues + ";";
-
-        CallableStatement cStmt = conn.prepareCall(sql_query);
-
         try{
+
+            String sql_query = "INSERT INTO medicao(IDMedicao, IDZona, IDSensor, TipoSensor, Valor, Datetime) VALUES ";
+            ArrayList<String> values = new ArrayList<>();
+
+            for(Measurement m : measurements){
+                if(Double.parseDouble(m.getValue()) != 999.99){
+                    values.add("(\'" + m.getId() + "\'," + m.getZoneId() + "," + m.getSensorId() + ",\'" + m.getSensorType() + "\'," + m.getValue() + ",\'" + m.getTimestamp() + "\')");
+                }
+            }
+
+            String finalValues = String.join(",", values);
+
+            sql_query = sql_query + finalValues + " ON DUPLICATE KEY UPDATE IDMedicao = IDMedicao;";
+
+            CallableStatement cStmt = conn.prepareCall(sql_query);
+
             cStmt.execute();
+
+            System.out.println("Inserted multiple values");
+
         }
         catch(Exception ex){
-            int a = 1;
+            ErrorHandling.formatError(ERROR_SOURCE.MYSQL_LOCAL, "Could not execute InsertMedicoes", ex);
         }
-
-        System.out.println("Inserted multiple values");
 
     }
 
     public void executeInsertMedicao(Measurement measurement) throws Exception {
 
-        if(conn == null)
-            throw new Exception();
+        try{
+
+            CallableStatement cStmt = conn.prepareCall("{call InserirMedicao(?, ?, ?, ?, ?, ?)}"); // Stored Procedure
+
+            // Parameters
+            cStmt.setString(1, measurement.getZoneId());
+            cStmt.setString(2, measurement.getSensorId());
+            cStmt.setString(3, measurement.getSensorType());
+            cStmt.setString(4, measurement.getTimestamp());
+            cStmt.setString(5, measurement.getValue());
+            cStmt.setString(6, measurement.getId());
 
 
-        CallableStatement cStmt = conn.prepareCall("{call InserirMedicao(?, ?, ?, ?, ?, ?)}"); // Stored Procedure
+            cStmt.execute();
 
-        // Parameters
-        cStmt.setString(1, measurement.getZoneId());
-        cStmt.setString(2, measurement.getSensorId());
-        cStmt.setString(3, measurement.getSensorType());
-        cStmt.setString(4, measurement.getTimestamp());
-        cStmt.setString(5, measurement.getValue());
-        cStmt.setString(6, measurement.getId());
+            System.out.println("Inserted one value");
 
-        cStmt.execute();
+        }
+        catch(Exception ex){
+            ErrorHandling.formatError(ERROR_SOURCE.MYSQL_LOCAL, "Could not execute InsertMedicao for " + measurement.toJSON(), ex);
+        }
 
     }
 
