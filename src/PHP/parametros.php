@@ -244,6 +244,10 @@ a{
 				<input type="text" id="nome" name="nome" value="<?php echo $_SESSION["cultura"]; ?>" autocomplete="off">
 			</div>
 			<div>
+				<label for="intervalo">Intervalo entre Alertas:</label><br>
+				<input type="number" id="intervalo" name="intervalo" value="<?php echo $_SESSION["intervalo"]; ?>" autocomplete="off">
+			</div>
+			<div>
 				<p id="no_input_label">Estado da Cultura:</p>
 				<p id="no_input"><?php echo $_SESSION["estado"]; ?></p>
 			</div>
@@ -377,6 +381,30 @@ a{
 		}
 	}
 	
+	if(isset($_POST["alterar_intervalo"]) && isset($_POST["intervalo"]){
+			
+		try{
+			$userconn = new mysqli($ip, $_SESSION["user"], $_SESSION["pass"], $db);
+					
+			$stmt = $userconn->prepare("CALL AlterarIntervalo(?,?)");
+			$stmt->bind_param("si", $_SESSION["cultura"], $_POST["intervalo"]);
+			$stmt->execute();
+					
+			$userconn->close();
+			
+			$_SESSION["intervalo"] = $_POST["intervalo"];
+			unset($_POST["intervalo"]);
+			unset($_POST["alterar_intervalo"]);
+			
+			echo '<meta http-equiv="refresh" content="0"/>';
+		}catch(Exception $e){
+			$error = $e->getMessage();
+		?>
+			<script type='text/javascript'>alert("<?php echo $error; ?>");</script>
+		<?php
+		}
+	}
+	
 	if(isset($_POST["alterar_hum"]) && isset($_POST["vmaxh"]) && isset($_POST["tmaxh"]) && isset($_POST["tminh"]) && isset($_POST["vminh"])){
 				
 		try{
@@ -392,6 +420,7 @@ a{
 			unset($_POST["tminh"]);
 			unset($_POST["tmaxh"]);
 			unset($_POST["vmaxh"]);
+			unset($_POST["alterar_hum"]);
 			
 			echo '<meta http-equiv="refresh" content="0"/>';
 		}catch(Exception $e){
@@ -417,6 +446,7 @@ a{
 			unset($_POST["tmint"]);
 			unset($_POST["tmaxt"]);
 			unset($_POST["vmaxt"]);
+			unset($_POST["alterar_temp"]);
 			
 			echo '<meta http-equiv="refresh" content="0"/>';
 		}catch(Exception $e){
@@ -442,6 +472,7 @@ a{
 			unset($_POST["tminl"]);
 			unset($_POST["tmaxl"]);
 			unset($_POST["vmaxl"]);
+			unset($_POST["alterar_luz"]);
 			
 			echo '<meta http-equiv="refresh" content="0"/>';
 		}catch(Exception $e){
@@ -456,6 +487,7 @@ a{
 				
 		unset($_SESSION["cultura"]);
 		unset($_SESSION["estado"]);
+		unset($_SESSION["intervalo"]);
 		unset($_POST["voltar"]);
 		
 		header("Location: investigador.php");
