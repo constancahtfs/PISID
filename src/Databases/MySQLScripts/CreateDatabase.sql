@@ -51,7 +51,8 @@ CREATE TABLE `cultura` (
   `IDUtilizador` varchar(50) NOT NULL,
   `IDZona` int(11) NOT NULL,
   `NomeCultura` varchar(50) NOT NULL,
-  `Estado` tinyint(1) NOT NULL
+  `Estado` tinyint(1) NOT NULL,
+  `Intervalo` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
@@ -426,8 +427,8 @@ BEGIN
     SET @nome_cultura := REPLACE(@nome_cultura,'''','');
     SET @uuid = uuid();
     SET FOREIGN_KEY_CHECKS=0;
-    INSERT INTO cultura(IDCultura, IDUtilizador, IDZona, NomeCultura, Estado)
-    VALUES (@uuid, "NÃO_ATRIBUÍDA", `IDZona`, @nome_cultura, 0);
+    INSERT INTO cultura(IDCultura, IDUtilizador, IDZona, NomeCultura, Estado, Intervalo)
+    VALUES (@uuid, "NÃO_ATRIBUÍDA", `IDZona`, @nome_cultura, 0, 1);
     SET FOREIGN_KEY_CHECKS=1;
 
 
@@ -721,6 +722,66 @@ DELIMITER ;
 -- --------------------------------------------------------
 
 --
+-- Procedure AlterarIntervalo
+--
+
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS `AlterarIntervalo` $$
+CREATE DEFINER=`root`@`localhost`
+PROCEDURE `AlterarIntervalo` (IN `NomeCultura` VARCHAR(50), IN NovoIntervalo INT(11))
+BEGIN
+    SELECT USER() INTO @caller;
+    SET @caller := SUBSTRING_INDEX(@caller,'@',2),
+        @caller := CONCAT("'", @caller, "'"),
+        @nome_cultura := CONCAT("'", `NomeCultura`, "'"),
+        @novo_intervalo := CONCAT("'", NovoIntervalo, "'");
+
+    SET @`sql` = CONCAT('SELECT u.IDUtilizador INTO @utilizador FROM utilizador u WHERE u.EmailUtilizador=', @caller);
+    PREPARE `stmt` FROM @`sql`;
+    EXECUTE `stmt`;
+
+    SET @`sql` = CONCAT('SELECT c.IDUtilizador INTO @delegated_to FROM cultura c WHERE c.NomeCultura=', @nome_cultura);
+    PREPARE `stmt` FROM @`sql`;
+    EXECUTE `stmt`;
+
+    IF ((NOT STRCMP(@utilizador,@delegated_to) = 0) OR (@utilizador IS NULL)) THEN
+        SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Só pode alterar o intervalo entre alertas das suas culturas.";
+    END IF;
+
+    SET @utilizador := CONCAT("'", @utilizador, "'");
+
+    SET @`sql` = CONCAT('SELECT c.IDCultura INTO @idcultura FROM cultura c WHERE c.IDUtilizador=', @utilizador,' AND c.NomeCultura=', @nome_cultura);
+    PREPARE `stmt` FROM @`sql`;
+    EXECUTE `stmt`;
+
+    SET @idcultura := CONCAT("'", @idcultura, "'");
+
+    SET @`sql` = CONCAT('SELECT c.Intervalo INTO @intervalo FROM cultura c WHERE c.IDUtilizador=', @utilizador,' AND c.NomeCultura=', @nome_cultura);
+    PREPARE `stmt` FROM @`sql`;
+    EXECUTE `stmt`;
+
+    IF NovoIntervalo<1 THEN
+        SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Escolha um valor entre 1 e 60 minutos.";
+    END IF;
+
+    IF NovoIntervalo>60 THEN
+        SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Escolha um valor entre 1 e 60 minutos.";
+    END IF;
+
+	SET @`sql` = CONCAT('UPDATE cultura SET Intervalo=', @novo_intervalo,' WHERE IDCultura=', @idcultura);
+    PREPARE `stmt` FROM @`sql`;
+    EXECUTE `stmt`;
+
+    DEALLOCATE PREPARE `stmt`;
+    FLUSH PRIVILEGES;
+END$$
+
+DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
 -- Procedure AlterarCultura
 --
 
@@ -840,6 +901,7 @@ BEGIN
     DECLARE TolMin DECIMAL(5,2);
     DECLARE TolMax DECIMAL(5,2);
     DECLARE prev INT(11);
+    DECLARE spacing INT(11);
     DECLARE nome_cultura VARCHAR(50);
     DECLARE cur1 CURSOR FOR SELECT IDCultura, Estado, IDUtilizador FROM cultura WHERE IDZona = NEW.IDZona;
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
@@ -857,7 +919,8 @@ BEGIN
 
             SELECT ToleranciaMax, ToleranciaMin INTO TolMax, TolMin FROM parametrocultura WHERE IDCultura = id_cultura AND TipoSensor = NEW.TipoSensor;
             SELECT NomeCultura INTO nome_cultura FROM cultura WHERE IDCultura = id_cultura;
-            SELECT COUNT(*) INTO prev FROM alerta WHERE IDCultura = id_cultura AND TipoAlerta = "T" AND Datetime >= now() - interval 2 minute;
+            SELECT Intervalo INTO spacing FROM cultura WHERE IDCultura = id_cultura;
+            SELECT COUNT(*) INTO prev FROM alerta WHERE IDCultura = id_cultura AND TipoAlerta = "T" AND Datetime >= now() - interval spacing minute;
 
             IF (prev = 0) THEN
                 IF (NEW.Valor <= TolMin) THEN
@@ -895,6 +958,7 @@ BEGIN
     DECLARE ValMin DECIMAL(5,2);
     DECLARE ValMax DECIMAL(5,2);
     DECLARE prev INT(11);
+    DECLARE spacing INT(11);
     DECLARE nome_cultura VARCHAR(50);
     DECLARE cur1 CURSOR FOR SELECT IDCultura, Estado, IDUtilizador FROM cultura WHERE IDZona = NEW.IDZona;
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
@@ -912,7 +976,8 @@ BEGIN
 
             SELECT ValorMax, ValorMin INTO ValMax, ValMin FROM parametrocultura WHERE IDCultura = id_cultura AND TipoSensor = NEW.TipoSensor;
             SELECT NomeCultura INTO nome_cultura FROM cultura WHERE IDCultura = id_cultura;
-            SELECT COUNT(*) INTO prev FROM alerta WHERE IDCultura = id_cultura AND TipoAlerta = "V" AND Datetime >= now() - interval 2 minute;
+            SELECT Intervalo INTO spacing FROM cultura WHERE IDCultura = id_cultura;
+            SELECT COUNT(*) INTO prev FROM alerta WHERE IDCultura = id_cultura AND TipoAlerta = "V" AND Datetime >= now() - interval spacing minute;
 
             IF(prev = 0) THEN
                 IF (NEW.Valor <= ValMin) THEN
