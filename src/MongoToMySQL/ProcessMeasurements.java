@@ -15,7 +15,39 @@ public class ProcessMeasurements {
         this.difference = difference;
     }
 
-    public void removeOutliers(){
+    public ArrayList<Measurement> removeOutliers(){
+
+        ArrayList<Measurement> list1 = new ArrayList<Measurement>();
+        ArrayList<Measurement> list2 = new ArrayList<Measurement>();
+
+        double lastValue = measurements.get(0).getValueDouble();
+
+        for(int i = 1; i < measurements.size(); i++) {
+
+            double newValue = measurements.get(i).getValueDouble();
+
+            if(areSimilar(lastValue, newValue)){
+                lastValue = measurements.get(i).getValueDouble();
+                list1.add(measurements.get(i));
+            }
+            else{
+                list2.add(measurements.get(i));
+            }
+
+        }
+
+        if (list1.size() >= list2.size())
+            return list1;
+        else
+            return list2;
+
+    }
+
+    private boolean areSimilar(double value1, double value2){
+        return ((Math.abs(value1 - value2) <= difference));
+    }
+
+    /*public void removeOutliers(){
 
         //System.out.println("Tamanho da lista de medições: " + measurements.size());
 
@@ -66,11 +98,9 @@ public class ProcessMeasurements {
             measurements.remove(measurement);
 
         //System.out.println("Tamanho da lista de medições após remoção de outliers: " + measurements.size());
-    }
+    }*/
 
-    private boolean areSimilar(double value1, double value2){
-        return ((Math.abs(value1 - value2) <= difference));
-    }
+
 
 
 }

@@ -83,7 +83,7 @@ public class MongoLocalToMySQLLocal {
             // Remove outliers
             if(measurements.size() != 0){
                 ProcessMeasurements pm = new ProcessMeasurements(measurements, 1.0);
-                pm.removeOutliers();
+                measurements = pm.removeOutliers();
 
                 // Insert a bunch of measurements
                 if(firstTimeRunning){
