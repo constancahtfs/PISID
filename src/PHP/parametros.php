@@ -253,6 +253,7 @@ a{
 			</div>
 			<div class="form_buttons">
 				<input type="submit" value="Guardar Nome" name="alterar_nome">
+				<input type="submit" value="Alterar Intervalo" name="alterar_intervalo">
 				<input type="submit" value="Alterar Estado" name="alterar_estado">
 			</div>
 		</fieldset>
@@ -381,7 +382,7 @@ a{
 		}
 	}
 	
-	if(isset($_POST["alterar_intervalo"]) && isset($_POST["intervalo"]){
+	if(isset($_POST["alterar_intervalo"]) && isset($_POST["intervalo"])){
 			
 		try{
 			$userconn = new mysqli($ip, $_SESSION["user"], $_SESSION["pass"], $db);
