@@ -1032,6 +1032,7 @@ GRANT SELECT ON estufa.parametrocultura TO Investigador;
 GRANT EXECUTE ON PROCEDURE AlterarParametrosCultura TO Investigador;
 GRANT EXECUTE ON PROCEDURE AlterarCultura TO Investigador;
 GRANT EXECUTE ON PROCEDURE AlterarEstado TO Investigador;
+GRANT EXECUTE ON PROCEDURE AlterarIntervalo TO Investigador;
 
 -- --------------------------------------------------------
 
