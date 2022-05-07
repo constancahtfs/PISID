@@ -1071,10 +1071,10 @@ BEGIN
         IF (prev = 0) THEN
             IF (NEW.Valor <= LimMin) THEN
                 INSERT INTO alerta(IDAlerta, IDZona, NomeCultura, IDCultura, IDUtilizador, IDSensor, TipoSensor, TipoAlerta, Datetime, Valor, Mensagem)
-                VALUES (uuid(), NEW.IDZona, DEFAULT, DEFAULT, utilizador, NEW.IDSensor, NEW.TipoSensor, 'S', CURRENT_TIMESTAMP, NEW.Valor, "Sensor ultrapassou valores mínimos!.");
+                VALUES (uuid(), NEW.IDZona, DEFAULT, DEFAULT, utilizador, NEW.IDSensor, NEW.TipoSensor, 'S', CURRENT_TIMESTAMP, NEW.Valor, "Sensor ultrapassou valores mínimos!");
             ELSEIF (NEW.Valor >= LimMax) THEN
                 INSERT INTO alerta(IDAlerta, IDZona, NomeCultura, IDCultura, IDUtilizador, IDSensor, TipoSensor, TipoAlerta, Datetime, Valor, Mensagem)
-                VALUES (uuid(), NEW.IDZona, DEFAULT, DEFAULT, utilizador, NEW.IDSensor, NEW.TipoSensor, 'S', CURRENT_TIMESTAMP, NEW.Valor, "Sensor ultrapassou valores máximos!.");
+                VALUES (uuid(), NEW.IDZona, DEFAULT, DEFAULT, utilizador, NEW.IDSensor, NEW.TipoSensor, 'S', CURRENT_TIMESTAMP, NEW.Valor, "Sensor ultrapassou valores máximos!");
             END IF;
         END IF;
     END LOOP alert_loop;
