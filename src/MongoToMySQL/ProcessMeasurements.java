@@ -17,7 +17,7 @@ public class ProcessMeasurements {
 
     public void removeOutliers(){
 
-        System.out.println("Tamanho da lista de medições: " + measurements.size());
+        //System.out.println("Tamanho da lista de medições: " + measurements.size());
 
         // Iterar a lista e perceber se o valor anterior e posterior sao muito
 
@@ -65,7 +65,7 @@ public class ProcessMeasurements {
         for(Measurement measurement : measurements_to_remove)
             measurements.remove(measurement);
 
-        System.out.println("Tamanho da lista de medições após remoção de outliers: " + measurements.size());
+        //System.out.println("Tamanho da lista de medições após remoção de outliers: " + measurements.size());
     }
 
     private boolean areSimilar(double value1, double value2){

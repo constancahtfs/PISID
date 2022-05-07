@@ -1,5 +1,6 @@
 package Databases;
 
+import Utils.Dates;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
 import com.mongodb.client.FindIterable;
@@ -43,39 +44,15 @@ public class MongoCloud {
         }
         else {
 
+            System.out.println("Does not have timestamp file");
 
-           /* lastTimestamp = String.valueOf(new Timestamp(System.currentTimeMillis()));
-            String[] timestampArr1 = lastTimestamp.split(" ");
-            lastTimestamp = timestampArr1[0] + "T" + timestampArr1[1] + "Z";
-            Instant aa = Instant.parse(lastTimestamp);*/
-
-            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-            Calendar cal = Calendar.getInstance();
-            cal.setTimeInMillis(timestamp.getTime());
-            cal.add(Calendar.MINUTE, -2);
-            timestamp = new Timestamp(cal.getTime().getTime());
-            lastTimestamp = String.valueOf(timestamp);
-            String[] timestampArr1 = lastTimestamp.split(" ");
-            lastTimestamp = timestampArr1[0] + "T" + timestampArr1[1] + "Z";
-
-
+            lastTimestamp = Dates.getOneHourPastTimestamp();
             data = db.getCollection("medicoes2022").find(and(eq("Sensor", sensor), gt("Data", lastTimestamp)));
-            //.sort(Sorts.descending("Data"));
-            System.out.println("Não tem ultimo timestamp");
 
-            /*
-            Document lastDoc = data.first();
-            String[] Data = lastDoc.toString().split("=");
-            String[] Time = Data[4].split(",");
-            String timestamp = Time[0];
-            */
 
         }
 
-        String timestamp = new Timestamp(System.currentTimeMillis()).toString();
-        String[] timestampArr = timestamp.split(" ");
-        timestamp = timestampArr[0] + "T" + timestampArr[1] + "Z";
-
+        String timestamp = Dates.getNowTimestamp();
         createTimestampFile(timestamp, sensor);
 
         return data;
@@ -85,13 +62,14 @@ public class MongoCloud {
     public static void createTimestampFile(String timestamp, String sensorID){
         String userDirectory = Paths.get("").toAbsolutePath().toString();
         try{
+
             File timestampTXT = new File(userDirectory + "\\src\\MongoToMongo\\last_timestamp" + sensorID + ".txt");
             FileWriter fr = new FileWriter(timestampTXT,false);
             fr.write(timestamp);
             fr.close();
-            //System.out.println("Timestamp atualizado!");
+
         } catch (Exception e) {
-            System.out.println("Something went wrong with the timestamp file!");
+            System.out.println("Could not create the timestamp file.");
         }
     }
 
@@ -127,18 +105,6 @@ public class MongoCloud {
             return null;
         }
 
-    }
-
-    private static String formatTimeStamp(String timestamp){
-        Instant instant = Instant.parse(timestamp);
-        DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-                .withZone(ZoneId.systemDefault());
-        return DATE_TIME_FORMATTER.format(instant);
-    }
-
-
-    public MongoDatabase getDatabase()  {
-        return db;
     }
 
 }

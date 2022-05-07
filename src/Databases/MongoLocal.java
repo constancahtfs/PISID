@@ -1,15 +1,13 @@
 package Databases;
 
+import Errors.ERROR_SOURCE;
+import Errors.ErrorHandling;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.result.DeleteResult;
 import org.bson.Document;
 
-import java.sql.Timestamp;
-import java.time.Instant;
-
-import static com.mongodb.client.model.Filters.*;
 
 public class MongoLocal {
 
@@ -18,8 +16,14 @@ public class MongoLocal {
     private MongoDatabase db;
 
     public MongoLocal(){
-        MongoClient mongoClient = new MongoClient(MongoLocal.HOST, MongoLocal.PORT);
-        db = mongoClient.getDatabase("estufa");
+        db = null;
+        try {
+            MongoClient mongoClient = new MongoClient(MongoLocal.HOST, MongoLocal.PORT);
+            db = mongoClient.getDatabase("estufa");
+        }
+        catch(Exception ex){
+            System.out.println("Unable to connect to database MongoDB Local.");
+        }
     }
 
     public MongoCollection<Document> getSensorData(String collectionName){
@@ -29,8 +33,24 @@ public class MongoLocal {
     }
 
     public void deleteSensorDocument(String collectionName, Document doc){
-        MongoCollection<Document> collection = db.getCollection(collectionName);
-        DeleteResult deleteResult = collection.deleteMany(doc);
+
+        try{
+            MongoCollection<Document> collection = db.getCollection(collectionName);
+            DeleteResult deleteResult = collection.deleteMany(doc);
+        }
+        catch(Exception ex){
+            ErrorHandling.formatError(ERROR_SOURCE.MONGO_LOCAL, "Could not delete document " + doc.toJson(), ex);
+        }
+    }
+
+    public void insertSensorDocument(String collectionName, Document doc){
+
+        try{
+            db.getCollection(collectionName).insertOne(doc);
+        }
+        catch(Exception ex){
+            ErrorHandling.formatError(ERROR_SOURCE.MONGO_LOCAL, "Could not insert document " + doc.toJson(), ex);
+        }
     }
 
     public MongoDatabase getDatabase() {
