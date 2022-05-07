@@ -24,12 +24,13 @@ BEGIN
 
 
     SET `nome` := REPLACE(`nome`,'''',''),
-        `email` := REPLACE(`email`,'''','');
+        `email` := REPLACE(`email`,'''',''),
+        @role := CAST(`role` as CHAR);
 
+    SET @final = SUBSTR(role, 1, 1);
 
     INSERT INTO utilizador(IDUtilizador, NomeUtilizador, EmailUtilizador, TipoUtilizador)
-    VALUES (uuid(), `nome`, `email`, `role`);
-
+    VALUES (uuid(), `nome`, `email`, @final);
 
     DEALLOCATE PREPARE `stmt`;
     FLUSH PRIVILEGES;

@@ -29,8 +29,8 @@ SET time_zone = "+00:00";
 CREATE TABLE `alerta` (
   `IDAlerta` varchar(50) NOT NULL,
   `IDZona` int(11) NOT NULL,
-  `NomeCultura` varchar(50) NOT NULL,
-  `IDCultura` varchar(50) NOT NULL,
+  `NomeCultura` varchar(50) NOT NULL DEFAULT "Todas",
+  `IDCultura` varchar(50) NOT NULL DEFAULT "Todas",
   `IDUtilizador` varchar(50) NOT NULL,
   `IDSensor` int(11) NOT NULL,
   `TipoSensor` varchar(1) NOT NULL,
@@ -148,8 +148,7 @@ CREATE TABLE `zona` (
 -- Indexes for table `alerta`
 --
 ALTER TABLE `alerta`
-  ADD PRIMARY KEY (`IDAlerta`),
-  ADD KEY `IDCultura` (`IDCultura`);
+  ADD PRIMARY KEY (`IDAlerta`);
 
 --
 -- Indexes for table `cultura`
@@ -204,12 +203,6 @@ ALTER TABLE `zona`
 --
 -- Constraints for dumped tables
 --
-
---
--- Constraints for table `alerta`
---
-ALTER TABLE `alerta`
-  ADD CONSTRAINT `alerta_ibfk_1` FOREIGN KEY (`IDCultura`) REFERENCES `cultura` (`IDCultura`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `cultura`
@@ -300,8 +293,6 @@ DELIMITER ;
 --
 -- Procedure CriarUtilizador
 --
-
-DELIMITER $$
 
 DELIMITER $$
 
@@ -570,6 +561,73 @@ BEGIN
     UPDATE cultura
     SET IDUtilizador=@utilizador
     WHERE NomeCultura = nome_cultura;
+
+
+    DEALLOCATE PREPARE `stmt`;
+    FLUSH PRIVILEGES;
+END$$
+
+DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
+-- Procedure AtribuirZona
+--
+
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS `AtribuirZona` $$
+CREATE DEFINER=`root`@`localhost`
+PROCEDURE `AtribuirZona` (IN `nro_zona` VARCHAR(50), IN `email_tecnico` VARCHAR(150))
+BEGIN
+    SET `email_tecnico` := CONCAT("'", `email_tecnico`, "'"),
+        `nro_zona` := CONCAT("'", `nro_zona`, "'");
+
+    SET @`sql` = CONCAT('SELECT COUNT(EmailUtilizador) INTO @tecnico FROM utilizador WHERE EmailUtilizador=', `email_tecnico`);
+    PREPARE `stmt` FROM @`sql`;
+    EXECUTE `stmt`;
+
+    IF @tecnico=0 THEN
+        SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Utilizador não existe.";
+    END IF;
+    -- --------------------------------------------------------
+
+    SET @`sql` = CONCAT('SELECT u.TipoUtilizador INTO @role FROM utilizador u WHERE u.EmailUtilizador=', `email_tecnico`);
+    PREPARE `stmt` FROM @`sql`;
+    EXECUTE `stmt`;
+
+    SET @role_check = SUBSTR(@role, 1, 1);
+
+    IF NOT STRCMP("T",@role_check) = 0 THEN
+        SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Utilizador não é Técnico.";
+    END IF;
+    -- --------------------------------------------------------
+
+    SET @`sql` = CONCAT('SELECT COUNT(IDZona) INTO @zona FROM zona WHERE IDZona=', `nro_zona`);
+    PREPARE `stmt` FROM @`sql`;
+    EXECUTE `stmt`;
+
+    IF @zona=0 THEN
+        SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Zona não existe.";
+    END IF;
+    -- --------------------------------------------------------
+
+    SET @zone_check = SUBSTR(@role, 2, 1),
+        `nro_zona` := REPLACE(`nro_zona`,'''','');
+
+    IF STRCMP(`nro_zona`,@zone_check) = 0 THEN
+        SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Zona já está atribuída ao Técnico.";
+    END IF;
+
+    -- --------------------------------------------------------
+
+    SET `email_tecnico` := REPLACE(`email_tecnico`,'''',''),
+        @tipo = CONCAT(@role_check, `nro_zona`);
+
+    UPDATE utilizador
+    SET TipoUtilizador=@tipo
+    WHERE EmailUtilizador = email_tecnico;
 
 
     DEALLOCATE PREPARE `stmt`;
@@ -991,6 +1049,58 @@ BEGIN
                     INSERT INTO alerta(IDAlerta, IDZona, NomeCultura, IDCultura, IDUtilizador, IDSensor, TipoSensor, TipoAlerta, Datetime, Valor, Mensagem)
                     VALUES (uuid(), NEW.IDZona, nome_cultura, id_cultura, utilizador, NEW.IDSensor, NEW.TipoSensor, 'V', CURRENT_TIMESTAMP, NEW.Valor, "Medição excedeu valor máximo do sensor.");
                 END IF;
+            END IF;
+        END IF;
+    END LOOP alert_loop;
+
+    CLOSE cur1;
+END$$
+
+DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
+-- Trigger AlertaLimitesSensor
+--
+
+DELIMITER $$
+
+DROP TRIGGER IF EXISTS `AlertaLimitesSensor` $$
+CREATE DEFINER=`root`@`localhost`
+TRIGGER `AlertaLimitesSensor` BEFORE INSERT ON `medicao` FOR EACH ROW
+BEGIN
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE tipo VARCHAR(50);
+    DECLARE utilizador VARCHAR(50);
+    DECLARE LimMin DECIMAL(5,2);
+    DECLARE LimMax DECIMAL(5,2);
+    DECLARE prev INT(11);
+    DECLARE creds VARCHAR(50);
+    DECLARE cur1 CURSOR FOR SELECT TipoUtilizador, IDUtilizador FROM utilizador WHERE TipoUtilizador = creds;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+    SET creds = CONCAT("T", NEW.IDZona);
+
+    OPEN cur1;
+
+    alert_loop: LOOP
+        FETCH cur1 INTO tipo, utilizador;
+
+        IF done THEN
+            LEAVE alert_loop;
+        END IF;
+
+        SELECT LimiteSuperior, LimiteInferior INTO LimMax, LimMin FROM sensor WHERE TipoSensor = NEW.TipoSensor AND IDZona = NEW.IDZona;
+        SELECT COUNT(*) INTO prev FROM alerta WHERE TipoAlerta = "S" AND TipoSensor = NEW.TipoSensor AND IDUtilizador = utilizador AND Datetime >= now() - interval 1 minute;
+
+        IF (prev = 0) THEN
+            IF (NEW.Valor <= LimMin) THEN
+                INSERT INTO alerta(IDAlerta, IDZona, NomeCultura, IDCultura, IDUtilizador, IDSensor, TipoSensor, TipoAlerta, Datetime, Valor, Mensagem)
+                VALUES (uuid(), NEW.IDZona, DEFAULT, DEFAULT, utilizador, NEW.IDSensor, NEW.TipoSensor, 'S', CURRENT_TIMESTAMP, NEW.Valor, "Sensor ultrapassou valores mínimos!.");
+            ELSEIF (NEW.Valor >= LimMax) THEN
+                INSERT INTO alerta(IDAlerta, IDZona, NomeCultura, IDCultura, IDUtilizador, IDSensor, TipoSensor, TipoAlerta, Datetime, Valor, Mensagem)
+                VALUES (uuid(), NEW.IDZona, DEFAULT, DEFAULT, utilizador, NEW.IDSensor, NEW.TipoSensor, 'S', CURRENT_TIMESTAMP, NEW.Valor, "Sensor ultrapassou valores máximos!.");
             END IF;
         END IF;
     END LOOP alert_loop;
