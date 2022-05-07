@@ -32,8 +32,8 @@ BEGIN
     SET @nome_cultura := REPLACE(@nome_cultura,'''','');
     SET @uuid = uuid();
     SET FOREIGN_KEY_CHECKS=0;
-    INSERT INTO cultura(IDCultura, IDUtilizador, IDZona, NomeCultura, Estado)
-    VALUES (@uuid, "NÃO_ATRIBUÍDA", `IDZona`, @nome_cultura, 0);
+    INSERT INTO cultura(IDCultura, IDUtilizador, IDZona, NomeCultura, Estado, Intervalo)
+    VALUES (@uuid, "NÃO_ATRIBUÍDA", `IDZona`, @nome_cultura, 0, 1);
     SET FOREIGN_KEY_CHECKS=1;
 
 
