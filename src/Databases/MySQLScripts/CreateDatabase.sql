@@ -109,7 +109,7 @@ CREATE TABLE `utilizador` (
   `IDUtilizador` varchar(50) NOT NULL,
   `NomeUtilizador` varchar(150) NOT NULL,
   `EmailUtilizador` varchar(64) NOT NULL,
-  `TipoUtilizador` varchar(1) NOT NULL
+  `TipoUtilizador` varchar(2) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
@@ -255,12 +255,13 @@ BEGIN
 
 
     SET `nome` := REPLACE(`nome`,'''',''),
-        `email` := REPLACE(`email`,'''','');
+        `email` := REPLACE(`email`,'''',''),
+        @role := CAST(`role` as CHAR);
 
+    SET @final = SUBSTR(role, 1, 1);
 
     INSERT INTO utilizador(IDUtilizador, NomeUtilizador, EmailUtilizador, TipoUtilizador)
-    VALUES (uuid(), `nome`, `email`, `role`);
-
+    VALUES (uuid(), `nome`, `email`, @final);
 
     DEALLOCATE PREPARE `stmt`;
     FLUSH PRIVILEGES;
@@ -273,6 +274,8 @@ DELIMITER ;
 --
 -- Procedure CriarUtilizador
 --
+
+DELIMITER $$
 
 DELIMITER $$
 
@@ -300,12 +303,13 @@ BEGIN
 
 
     SET `nome` := REPLACE(`nome`,'''',''),
-        `email` := REPLACE(`email`,'''','');
+        `email` := REPLACE(`email`,'''',''),
+        @role := CAST(`role` as CHAR);
 
+    SET @final = SUBSTR(role, 1, 1);
 
     INSERT INTO utilizador(IDUtilizador, NomeUtilizador, EmailUtilizador, TipoUtilizador)
-    VALUES (uuid(), `nome`, `email`, `role`);
-
+    VALUES (uuid(), `nome`, `email`, @final);
 
     DEALLOCATE PREPARE `stmt`;
     FLUSH PRIVILEGES;
@@ -1062,7 +1066,7 @@ CALL CriarAdministrador('Software','software@java.pt','software1234','Software')
 CALL CriarUtilizador('InvestigadorA', 'a@estufa.pt', 'a', 'Investigador');
 CALL CriarUtilizador('InvestigadorB', 'b@estufa.pt', 'b', 'Investigador');
 CALL CriarUtilizador('InvestigadorC', 'c@estufa.pt', 'c', 'Investigador');
-CALL CriarUtilizador('TécnicoA', 'aT@estufa.pt', 'aT', 'Investigador');
+CALL CriarUtilizador('TécnicoA', 'aT@estufa.pt', 'aT', 'Técnico');
 
 CALL CriarCultura('CulturaA1', '1');
 CALL CriarCultura('CulturaB1', '1');
