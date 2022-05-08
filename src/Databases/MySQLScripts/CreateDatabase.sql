@@ -171,7 +171,7 @@ ALTER TABLE `sensor`
 --
 ALTER TABLE `utilizador`
   ADD PRIMARY KEY (`IDUtilizador`) USING BTREE,
-  ADD UNIQUE KEY `NomeUtilizador` (`NomeUtilizador`);
+  ADD UNIQUE KEY `EmailUtilizador` (`EmailUtilizador`);
 
 --
 -- Indexes for table `zona`
