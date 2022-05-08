@@ -68,9 +68,12 @@ public class MongoLocalToMySQLLocal {
 
                         if (firstTimeRunning)
                             measurements.add(measurement);
-                        else
-                            mysql.executeInsertMedicao(measurement);
-
+                        else {
+                            mysql.setLastMeasurement();
+                            if(mysql.isNotOutlier(measurement, 1.0)){
+                                mysql.executeInsertMedicao(measurement);
+                            }
+                        }
 
                     } catch (Exception ignored) {
 
