@@ -15,6 +15,13 @@ import java.util.List;
 import static com.mongodb.client.model.Filters.gt;
 
 public class MongoLocalToMySQLLocal {
+    private static double lastMeasurement;
+
+    public static boolean isNotOutlier(Measurement m, double difference){
+        double value = m.getValueDouble();
+
+        return (Math.abs(value - lastMeasurement) <= difference);
+    }
 
     public static void migrateData(Sensor sensor) {
 
@@ -68,11 +75,9 @@ public class MongoLocalToMySQLLocal {
 
                         if (firstTimeRunning)
                             measurements.add(measurement);
-                        else {
-                            mysql.setLastMeasurement();
-                            if(mysql.isNotOutlier(measurement, 1.0)){
-                                mysql.executeInsertMedicao(measurement);
-                            }
+                        else if(isNotOutlier(measurement, 1.0)){
+                            mysql.executeInsertMedicao(measurement);
+                            lastMeasurement = measurement.getValueDouble();
                         }
 
                     } catch (Exception ignored) {
@@ -92,6 +97,7 @@ public class MongoLocalToMySQLLocal {
                 if(firstTimeRunning){
                     try{
                         mysql.executeInsertMedicoes(measurements);
+                        lastMeasurement = measurements.get(measurements.size() - 1).getValueDouble();
                         firstTimeRunning = false;
                     }
                     catch (Exception ignored){

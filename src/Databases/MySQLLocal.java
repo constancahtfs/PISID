@@ -12,7 +12,6 @@ import java.util.List;
 public class MySQLLocal {
 
     private Connection conn;
-    private double lastMeasurement;
     private static final String DB_USER = "software@java.pt"; //System.getenv("DB_USER_JAVA");
     private static final String DB_PASS = "software1234"; //System.getenv("DB_PASS_JAVA");
     private static final String DB_NAME = "estufa";
@@ -91,20 +90,6 @@ public class MySQLLocal {
             ErrorHandling.formatError(ERROR_SOURCE.MYSQL_LOCAL, "Could not execute InsertMedicao for " + measurement.toJSON(), ex);
         }
 
-    }
-
-    public void setLastMeasurement() throws Exception {
-        PreparedStatement stmt = conn.prepareStatement("select VALOR from MEDICAO order by DATETIME desc limit 1");
-
-        ResultSet measurement = stmt.executeQuery();
-        measurement.next();
-        lastMeasurement = measurement.getDouble("VALOR");
-    }
-
-    public boolean isNotOutlier(Measurement m, double difference){
-        double value = m.getValueDouble();
-
-        return (Math.abs(value - lastMeasurement) <= difference);
     }
 
     public ResultSet getValoresZona(String zona) throws Exception {
