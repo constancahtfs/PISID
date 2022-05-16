@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.Scanner;
 
 import static com.mongodb.client.model.Filters.*;
+import static com.mongodb.client.model.Sorts.descending;
 
 public class MongoCloud {
 
@@ -40,14 +41,14 @@ public class MongoCloud {
         FindIterable<Document> data = null;
 
         if(lastTimestamp != null){
-            data = db.getCollection("medicoes2022").find(and(eq("Sensor", sensor), gt("Data", lastTimestamp)));
+            data = db.getCollection("medicoes2022").find(and(eq("Sensor", sensor))).sort(descending("Data")).limit(10);
         }
         else {
 
             System.out.println("Does not have timestamp file");
 
             lastTimestamp = Dates.getOneHourPastTimestamp();
-            data = db.getCollection("medicoes2022").find(and(eq("Sensor", sensor), gt("Data", lastTimestamp)));
+            data = db.getCollection("medicoes2022").find(and(eq("Sensor", sensor))).sort(descending("Data")).limit(3600);
 
 
         }

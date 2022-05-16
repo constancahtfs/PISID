@@ -79,7 +79,7 @@ public class MongoLocalToMySQLLocal {
 
                         if (firstTimeRunning)
                             measurements.add(measurement);
-                        else if(isNotOutlier(measurement, lastMeasurement, 1.5) || outliers == 2){
+                        else if(isNotOutlier(measurement, lastMeasurement, 1.5) || outliers == 5){
                             mysql.executeInsertMedicao(measurement);
                             lastMeasurement = measurement.getValueDouble();
                             if(outliers == 2){
