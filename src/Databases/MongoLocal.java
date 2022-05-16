@@ -43,13 +43,15 @@ public class MongoLocal {
         }
     }
 
-    public void insertSensorDocument(String collectionName, Document doc){
+    public boolean insertSensorDocument(String collectionName, Document doc){
 
         try{
             db.getCollection(collectionName).insertOne(doc);
+            return true;
         }
         catch(Exception ex){
             ErrorHandling.formatError(ERROR_SOURCE.MONGO_LOCAL, "Could not insert document " + doc.toJson(), ex);
+            return false;
         }
     }
 

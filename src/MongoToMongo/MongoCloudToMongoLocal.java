@@ -36,8 +36,10 @@ public class MongoCloudToMongoLocal {
 
             try {
 
-                local.insertSensorDocument("sensor"+sensorID, doc);
-                countAdded++;
+                boolean success = local.insertSensorDocument("sensor"+sensorID, doc);
+
+                if(success)
+                    countAdded++;
 
             } catch(Exception e) {
 
@@ -50,8 +52,8 @@ public class MongoCloudToMongoLocal {
             }
         }
 
-        if(countAdded != 0)
-            System.out.println("No sensor " + sensorID + " foram adicionados " + countAdded + " registos.");
+        //if(countAdded != 0)
+            //System.out.println("No sensor " + sensorID + " foram adicionados " + countAdded + " registos.");
 
     }
 
