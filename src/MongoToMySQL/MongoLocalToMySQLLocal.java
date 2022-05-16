@@ -15,21 +15,17 @@ import java.util.List;
 import static com.mongodb.client.model.Filters.gt;
 
 public class MongoLocalToMySQLLocal {
+    private static double lastMeasurement;
 
-    public static boolean isNotOutlier(Measurement m, double comp, double difference){
+    public static boolean isNotOutlier(Measurement m, double difference){
         double value = m.getValueDouble();
 
-        return (Math.abs(value - comp) <= difference);
+        return (Math.abs(value - lastMeasurement) <= difference);
     }
 
     public static void migrateData(Sensor sensor) {
 
         boolean firstTimeRunning = true;
-        boolean firstOutlier = true;
-
-        int outliers = 0;
-        double lastMeasurement = 0;
-        double lastOutlier = 0;
 
         String sensorId = sensor.getSensorId();
         String sensorType =  sensor.getSensorType();
@@ -79,21 +75,9 @@ public class MongoLocalToMySQLLocal {
 
                         if (firstTimeRunning)
                             measurements.add(measurement);
-                        else if(isNotOutlier(measurement, lastMeasurement, 1.5) || outliers == 2){
+                        else if(isNotOutlier(measurement, 1.5)){
                             mysql.executeInsertMedicao(measurement);
                             lastMeasurement = measurement.getValueDouble();
-                            if(outliers == 2){
-                                outliers = 0;
-                                firstOutlier = true;
-                            }
-                        }else{
-                            if(firstOutlier) {
-                                lastOutlier = measurement.getValueDouble();
-                                firstOutlier = false;
-                            }else if(isNotOutlier(measurement, lastOutlier, 1.5)){
-                                outliers++;
-                                lastOutlier = measurement.getValueDouble();
-                            }
                         }
 
                     } catch (Exception ignored) {
@@ -106,7 +90,7 @@ public class MongoLocalToMySQLLocal {
 
             // Remove outliers
             if(measurements.size() != 0){
-                ProcessMeasurements pm = new ProcessMeasurements(measurements, 1.0);
+                ProcessMeasurements pm = new ProcessMeasurements(measurements, 1.5);
                 measurements = pm.removeOutliers();
 
                 // Insert a bunch of measurements
@@ -115,7 +99,6 @@ public class MongoLocalToMySQLLocal {
                         mysql.executeInsertMedicoes(measurements);
                         lastMeasurement = measurements.get(measurements.size() - 1).getValueDouble();
                         firstTimeRunning = false;
-                        measurements.clear();
                     }
                     catch (Exception ignored){
 
