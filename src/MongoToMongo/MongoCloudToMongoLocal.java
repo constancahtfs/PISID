@@ -52,6 +52,7 @@ public class MongoCloudToMongoLocal {
             }
         }
 
+        int a = 0;
         //if(countAdded != 0)
             //System.out.println("No sensor " + sensorID + " foram adicionados " + countAdded + " registos.");
 

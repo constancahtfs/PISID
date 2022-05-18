@@ -17,6 +17,42 @@ public class ProcessMeasurements {
 
     public ArrayList<Measurement> removeOutliers(){
 
+        double last = measurements.get(0).getValueDouble();
+
+
+
+        ArrayList<Measurement> clean = new ArrayList<Measurement>();
+
+        for (int i = 1; i < measurements.size(); i++) {
+
+            double m = measurements.get(i).getValueDouble();
+
+            if (!isNotOutlier(measurements.get(i), 0.5, last) && (m < last)) { // é outlier
+                last = m;
+                break;
+            }
+
+        }
+
+        for (int i = 1; i < measurements.size(); i++) {
+
+            double m = measurements.get(i).getValueDouble();
+
+            if (isNotOutlier(measurements.get(i), 0.5, last)) { // é outlier
+                clean.add(measurements.get(i));
+                last = m;
+            }
+
+        }
+
+
+
+        return clean;
+    }
+
+
+    /*public ArrayList<Measurement> removeOutliers(){
+
         ArrayList<Measurement> list1 = new ArrayList<Measurement>();
         ArrayList<Measurement> list2 = new ArrayList<Measurement>();
 
@@ -41,10 +77,16 @@ public class ProcessMeasurements {
         else
             return list2;
 
-    }
+    }*/
 
     private boolean areSimilar(double value1, double value2){
         return ((Math.abs(value1 - value2) <= difference));
+    }
+
+    public static boolean isNotOutlier(Measurement m, double difference, double lastMeasurement){
+        double value = m.getValueDouble();
+
+        return (Math.abs(value - lastMeasurement) <= difference);
     }
 
     /*public void removeOutliers(){

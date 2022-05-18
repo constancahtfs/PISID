@@ -1,5 +1,6 @@
 package MongoToMySQL;
 
+import Databases.MongoCloud;
 import Databases.MongoLocal;
 import Databases.MySQLLocal;
 import Models.Measurement;
@@ -9,10 +10,14 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import org.bson.Document;
+
+import java.io.File;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.mongodb.client.model.Filters.gt;
+import static com.mongodb.client.model.Filters.*;
+import static com.mongodb.client.model.Sorts.descending;
 
 public class MongoLocalToMySQLLocal {
     private static double lastMeasurement;
@@ -25,7 +30,7 @@ public class MongoLocalToMySQLLocal {
 
     public static void migrateData(Sensor sensor) {
 
-        boolean firstTimeRunning = true;
+
 
         String sensorId = sensor.getSensorId();
         String sensorType =  sensor.getSensorType();
@@ -47,6 +52,14 @@ public class MongoLocalToMySQLLocal {
             return;
         }
 
+        boolean firstTimeRunning = true;
+
+        /*
+        String userDirectory = Paths.get("").toAbsolutePath().toString();
+        File f = new File(userDirectory + "\\src\\MongoToMongo\\last_timestamp" + sensor.getSensorName() + ".txt");
+        if(f.exists()) firstTimeRunning = true;
+*/
+
         while(true) {
 
             MongoCollection<Document> documents = mongodb.getSensorData(collectioName);
@@ -55,7 +68,10 @@ public class MongoLocalToMySQLLocal {
 
 
             String lastTimestamp = Dates.getOneHourPastTimestamp();
-            fi = documents.find(gt("Data", lastTimestamp));
+            if(firstTimeRunning)
+                fi = documents.find().limit(3600);
+            else
+                fi = documents.find().limit(10);
 
 
             MongoCursor<Document> cursor = fi.iterator();
@@ -80,6 +96,21 @@ public class MongoLocalToMySQLLocal {
                             mongodb.deleteSensorDocument(collectioName, doc);
                             lastMeasurement = measurement.getValueDouble();
                         }
+                        else if (!isNotOutlier(measurement, 1.5)){
+
+                            mongodb.deleteSensorDocument(collectioName, doc);
+                            System.out.println("Apagou outlier  " + measurement.getValueDouble() + " com last " + lastMeasurement);
+
+                            /*
+                            if (lastMeasurement > measurement.getValueDouble()) {
+                                lastMeasurement = measurement.getValueDouble();
+                                System.out.println("LM atualizado para " + lastMeasurement);
+                            }
+                            *
+                             */
+
+                        }
+
 
                     } catch (Exception ignored) {
 
@@ -98,7 +129,7 @@ public class MongoLocalToMySQLLocal {
                 if(firstTimeRunning){
                     try{
                         mysql.executeInsertMedicoes(measurements);
-                        lastMeasurement = measurements.get(measurements.size() - 1).getValueDouble();
+                        lastMeasurement = measurements.get(0).getValueDouble();
                         firstTimeRunning = false;
                         measurements.clear();
                     }
@@ -109,9 +140,6 @@ public class MongoLocalToMySQLLocal {
                 }
 
             }
-
-
-
         }
     }
 }
