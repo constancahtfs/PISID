@@ -91,10 +91,13 @@ public class MongoLocalToMySQLLocal {
                             // Delete from MongoDB Local
                             mongodb.deleteSensorDocument(collectioName, doc);
                         }else if(isNotOutlier(measurement, 0.5)){
-                            mysql.executeInsertMedicao(measurement);
-                            // Delete from MongoDB Local
+
+                            if(mysql.executeInsertMedicao(measurement)){
+                                // Delete from MongoDB Local
+                                lastMeasurement = measurement.getValueDouble();
+                            }
                             mongodb.deleteSensorDocument(collectioName, doc);
-                            lastMeasurement = measurement.getValueDouble();
+
                         }
                         else if (!isNotOutlier(measurement, 0.5)){
 
@@ -129,7 +132,8 @@ public class MongoLocalToMySQLLocal {
                 if(firstTimeRunning){
                     try{
                         mysql.executeInsertMedicoes(measurements);
-                        lastMeasurement = measurements.get(0).getValueDouble();
+                        lastMeasurement = measurements.get(measurements.size()-1).getValueDouble();
+                        //lastMeasurement = measurements.get(0).getValueDouble();
                         firstTimeRunning = false;
                         measurements.clear();
                     }

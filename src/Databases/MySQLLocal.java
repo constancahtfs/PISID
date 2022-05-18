@@ -66,7 +66,7 @@ public class MySQLLocal {
 
     }
 
-    public void executeInsertMedicao(Measurement measurement) throws Exception {
+    public boolean executeInsertMedicao(Measurement measurement) throws Exception {
 
         try{
 
@@ -84,10 +84,12 @@ public class MySQLLocal {
             cStmt.execute();
 
             System.out.println("Inserted one value");
+            return true;
 
         }
         catch(Exception ex){
             ErrorHandling.formatError(ERROR_SOURCE.MYSQL_LOCAL, "Could not execute InsertMedicao for " + measurement.toJSON(), ex);
+            return false;
         }
 
     }
