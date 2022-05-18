@@ -90,13 +90,13 @@ public class MongoLocalToMySQLLocal {
                             measurements.add(measurement);
                             // Delete from MongoDB Local
                             mongodb.deleteSensorDocument(collectioName, doc);
-                        }else if(isNotOutlier(measurement, 1.5)){
+                        }else if(isNotOutlier(measurement, 0.5)){
                             mysql.executeInsertMedicao(measurement);
                             // Delete from MongoDB Local
                             mongodb.deleteSensorDocument(collectioName, doc);
                             lastMeasurement = measurement.getValueDouble();
                         }
-                        else if (!isNotOutlier(measurement, 1.5)){
+                        else if (!isNotOutlier(measurement, 0.5)){
 
                             mongodb.deleteSensorDocument(collectioName, doc);
                             System.out.println("Apagou outlier  " + measurement.getValueDouble() + " com last " + lastMeasurement);
@@ -122,7 +122,7 @@ public class MongoLocalToMySQLLocal {
 
             // Remove outliers
             if(measurements.size() != 0){
-                ProcessMeasurements pm = new ProcessMeasurements(measurements, 1.5);
+                ProcessMeasurements pm = new ProcessMeasurements(measurements, 0.5);
                 measurements = pm.removeOutliers();
 
                 // Insert a bunch of measurements
