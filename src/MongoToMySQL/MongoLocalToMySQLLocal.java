@@ -64,14 +64,12 @@ public class MongoLocalToMySQLLocal {
 
             MongoCollection<Document> documents = mongodb.getSensorData(collectioName);
             List<Measurement> measurements = new ArrayList<Measurement>();
+            List<Document> docsDelete = new ArrayList<Document>();
             FindIterable<Document> fi = null;
 
 
             String lastTimestamp = Dates.getOneHourPastTimestamp();
-            if(firstTimeRunning)
-                fi = documents.find().limit(3600);
-            else
-                fi = documents.find().limit(10);
+            fi = documents.find().limit(3600);
 
 
             MongoCursor<Document> cursor = fi.iterator();
@@ -85,11 +83,10 @@ public class MongoLocalToMySQLLocal {
 
                         // Validate measurement
                         Measurement measurement = new Measurement(doc, sensorId, sensorType);
+                        docsDelete.add(doc);
 
                         if (firstTimeRunning){
                             measurements.add(measurement);
-                            // Delete from MongoDB Local
-                            mongodb.deleteSensorDocument(collectioName, doc);
                         }else if(isNotOutlier(measurement, 0.5)){
                             mysql.executeInsertMedicao(measurement);
                             // Delete from MongoDB Local
@@ -130,8 +127,12 @@ public class MongoLocalToMySQLLocal {
                     try{
                         mysql.executeInsertMedicoes(measurements);
                         lastMeasurement = measurements.get(0).getValueDouble();
+                        for(int i = 0; i < docsDelete.size(); i++){
+                            mongodb.deleteSensorDocument(collectioName, docsDelete.get(i));
+                        }
                         firstTimeRunning = false;
                         measurements.clear();
+                        docsDelete.clear();
                     }
                     catch (Exception ignored){
 
