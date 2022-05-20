@@ -64,14 +64,12 @@ public class MongoLocalToMySQLLocal {
 
             MongoCollection<Document> documents = mongodb.getSensorData(collectioName);
             List<Measurement> measurements = new ArrayList<Measurement>();
+            List<Document> docsDelete = new ArrayList<Document>();
             FindIterable<Document> fi = null;
 
 
             String lastTimestamp = Dates.getOneHourPastTimestamp();
-            if(firstTimeRunning)
-                fi = documents.find().limit(3600);
-            else
-                fi = documents.find().limit(10);
+            fi = documents.find().limit(3600);
 
 
             MongoCursor<Document> cursor = fi.iterator();
@@ -85,19 +83,15 @@ public class MongoLocalToMySQLLocal {
 
                         // Validate measurement
                         Measurement measurement = new Measurement(doc, sensorId, sensorType);
+                        docsDelete.add(doc);
 
                         if (firstTimeRunning){
                             measurements.add(measurement);
+                        }else if(isNotOutlier(measurement, 0.5)){
+                            mysql.executeInsertMedicao(measurement);
                             // Delete from MongoDB Local
                             mongodb.deleteSensorDocument(collectioName, doc);
-                        }else if(isNotOutlier(measurement, 0.5)){
-
-                            if(mysql.executeInsertMedicao(measurement)){
-                                // Delete from MongoDB Local
-                                lastMeasurement = measurement.getValueDouble();
-                            }
-                            mongodb.deleteSensorDocument(collectioName, doc);
-
+                            lastMeasurement = measurement.getValueDouble();
                         }
                         else if (!isNotOutlier(measurement, 0.5)){
 
@@ -132,10 +126,13 @@ public class MongoLocalToMySQLLocal {
                 if(firstTimeRunning){
                     try{
                         mysql.executeInsertMedicoes(measurements);
-                        lastMeasurement = measurements.get(measurements.size()-1).getValueDouble();
-                        //lastMeasurement = measurements.get(0).getValueDouble();
+                        lastMeasurement = measurements.get(0).getValueDouble();
+                        for(int i = 0; i < docsDelete.size(); i++){
+                            mongodb.deleteSensorDocument(collectioName, docsDelete.get(i));
+                        }
                         firstTimeRunning = false;
                         measurements.clear();
+                        docsDelete.clear();
                     }
                     catch (Exception ignored){
 
