@@ -48,7 +48,7 @@ public class MongoCloud {
             System.out.println("Does not have timestamp file");
 
             lastTimestamp = Dates.getOneHourPastTimestamp();
-            data = db.getCollection("medicoes2022").find(and(eq("Sensor", sensor))).limit(3600);
+            data = db.getCollection("medicoes2022").find(and(eq("Sensor", sensor))).sort(descending("Data")).limit(3600);
 
 
         }
